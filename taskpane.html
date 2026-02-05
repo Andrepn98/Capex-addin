@@ -1,1 +1,628 @@
-<!doctype html><html><head><meta charset="UTF-8"/><meta http-equiv="X-UA-Compatible" content="IE=Edge"/><meta name="viewport" content="width=device-width,initial-scale=1"><title>Capex & D&A Calculator</title><script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script><style>body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:20px;background-color:#f5f5f5}.header{text-align:center;margin-bottom:25px}.header h1{color:#217346;font-size:20px;margin:0 0 5px 0}.header p{color:#666;font-size:12px;margin:0}.section{background:#fff;border-radius:8px;padding:15px;margin-bottom:15px;box-shadow:0 1px 3px rgba(0,0,0,.1)}.section h2{font-size:14px;color:#333;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #eee}.form-group{margin-bottom:12px}.form-group label{display:block;font-size:12px;color:#555;margin-bottom:4px}.form-group input{width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box}.form-group input:focus{outline:0;border-color:#217346}.btn{width:100%;padding:12px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:background-color .2s}.btn-primary{background-color:#217346;color:#fff}.btn-primary:hover{background-color:#1a5c38}.btn-secondary{background-color:#0078d4;color:#fff}.btn-secondary:hover{background-color:#006cbe}.status{padding:10px;border-radius:4px;font-size:12px;margin-top:10px;display:none}.status.success{background-color:#d4edda;color:#155724;display:block}.status.error{background-color:#f8d7da;color:#721c24;display:block}</style><script defer="defer" src="polyfill.js"></script><script defer="defer" src="taskpane.js"></script></head><body><div class="header"><h1>📊 Capex & D&A Calculator</h1><p>Create depreciation schedules instantly</p></div><div class="section"><h2>1. Create Template</h2><div class="form-group"><label for="startDate">Start Date</label> <input type="date" id="startDate" value="2026-01-01"/></div><div class="form-group"><label for="numPeriods">Number of Periods (months)</label> <input type="number" id="numPeriods" value="36" min="1" max="120"/></div><button class="btn btn-primary" id="createTemplate">Create D&A Template</button></div><div class="section"><h2>2. Add New Asset</h2><div class="form-group"><label for="assetName">Asset Name</label> <input id="assetName" placeholder="e.g., MacBook Pro"/></div><div class="form-group"><label for="assetDate">Purchase Date</label> <input type="date" id="assetDate" value="2026-01-01"/></div><div class="form-group"><label for="assetCost">Cost</label> <input type="number" id="assetCost" placeholder="e.g., 12000"/></div><div class="form-group"><label for="usefulLife">Useful Life (months)</label> <input type="number" id="usefulLife" value="36" min="1"/></div><div class="form-group"><label for="salvageValue">Salvage Value</label> <input type="number" id="salvageValue" placeholder="e.g., 1000" value="0"/></div><button class="btn btn-secondary" id="addAsset">Add Asset</button></div><div class="status" id="status"></div><script src="4c1b8a056627fbdae373.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ORNA • Capex & Depreciation</title>
+
+  <!-- Office.js for Excel integration -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+  <style>
+    :root{
+      --bg: #F7F8FA;
+      --panel: #FFFFFF;
+      --line: #E6EAF0;
+      --text: #0F172A;
+      --muted: #6B7280;
+
+      --blue: #2F6DB3;
+      --blue-2: #1E4E8C;
+      --yellow: #F4C430;
+
+      --radius: 14px;
+      --radius-sm: 10px;
+
+      --shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
+      --shadow-sm: 0 8px 20px rgba(15, 23, 42, 0.08);
+      --focus: 0 0 0 3px rgba(47, 109, 179, 0.18);
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height: 100%; }
+    body{
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap{
+      padding: 16px 14px 18px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .header{
+      padding: 16px 16px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(47,109,179,0.06), rgba(244,196,48,0.02));
+    }
+
+    .brand-icon{
+      width: 28px;
+      height: 28px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+      position: relative;
+    }
+    .brand-icon span{
+      background: var(--blue);
+      border-radius: 7px;
+    }
+    .brand-icon::after{
+      content:"";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--yellow);
+      right: -1px;
+      top: -1px;
+      box-shadow: 0 6px 16px rgba(244,196,48,0.45);
+    }
+
+    .hgroup{ min-width: 0; }
+    .title{
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 0;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .subtitle{
+      margin: 4px 0 0;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.25;
+    }
+
+    .content{ padding: 14px 16px 16px; }
+    .section{
+      padding: 14px 0 4px;
+    }
+    .section + .section{
+      border-top: 1px solid var(--line);
+      margin-top: 12px;
+      padding-top: 18px;
+    }
+
+    .kicker{
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #667085;
+      font-weight: 700;
+      margin: 0 0 10px;
+    }
+
+    .grid{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    label{
+      display: block;
+      font-size: 12.5px;
+      color: #374151;
+      font-weight: 600;
+      margin: 0 0 6px;
+    }
+
+    .field{
+      background: #FFFFFF;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    .field:focus-within{
+      border-color: rgba(47,109,179,0.55);
+      box-shadow: var(--focus);
+    }
+
+    input{
+      border: 0;
+      outline: 0;
+      width: 100%;
+      font-size: 14px;
+      color: var(--text);
+      background: transparent;
+    }
+    input::placeholder{ color: #9AA4B2; }
+
+    .icon-btn{
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #FAFBFD;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+    .icon-btn:hover{ background: #F3F6FB; }
+
+    .btn{
+      border: 1px solid transparent;
+      border-radius: 12px;
+      height: 44px;
+      padding: 0 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      transition: filter 0.15s ease;
+    }
+
+    .btn-primary{
+      background: linear-gradient(180deg, var(--blue), var(--blue-2));
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(47,109,179,0.28);
+    }
+    .btn-primary:hover{ filter: brightness(1.03); }
+    .btn-primary:disabled{
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary{
+      background: #fff;
+      border-color: var(--line);
+      color: var(--text);
+    }
+    .btn-secondary:hover{ background: #FAFBFD; }
+
+    .row{
+      display: grid;
+      grid-template-columns: 1fr 140px;
+      gap: 10px;
+      align-items: end;
+    }
+    @media (max-width: 420px){
+      .row{ grid-template-columns: 1fr; }
+    }
+
+    .status{
+      margin-top: 12px;
+      font-size: 12.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #9CA3AF;
+    }
+    .dot.ok{ background: #22C55E; }
+    .dot.warn{ background: #F59E0B; }
+    .dot.error{ background: #EF4444; }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 14px;
+      background: rgba(15, 23, 42, 0.92);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      box-shadow: var(--shadow);
+      max-width: 92vw;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="header">
+        <div class="brand-icon" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="hgroup">
+          <p class="title">Capex & D&A Calculator</p>
+          <p class="subtitle">by ORNA</p>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- TEMPLATE SETUP -->
+        <div class="section">
+          <p class="kicker">Template setup</p>
+
+          <div class="grid">
+            <div>
+              <label for="startDate">Start date</label>
+              <div class="field">
+                <input id="startDate" type="date" value="2026-01-01" />
+                <button class="icon-btn" type="button" title="Pick date" aria-label="Pick date" onclick="document.getElementById('startDate').showPicker?.()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label for="numPeriods">Number of periods (months)</label>
+              <div class="field">
+                <input id="numPeriods" type="number" min="1" step="1" value="36" placeholder="e.g., 36" />
+              </div>
+            </div>
+
+            <button id="createTemplate" class="btn btn-primary" type="button">
+              Create template
+            </button>
+          </div>
+        </div>
+
+        <!-- ADD ASSET -->
+        <div class="section">
+          <p class="kicker">Add asset</p>
+
+          <div class="grid">
+            <div>
+              <label for="assetName">Asset name</label>
+              <div class="field">
+                <input id="assetName" type="text" placeholder="e.g., MacBook Pro" />
+              </div>
+            </div>
+
+            <div>
+              <label for="assetDate">Purchase date</label>
+              <div class="field">
+                <input id="assetDate" type="date" value="2026-01-01" />
+                <button class="icon-btn" type="button" title="Pick date" aria-label="Pick date" onclick="document.getElementById('assetDate').showPicker?.()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="assetCost">Cost</label>
+                <div class="field">
+                  <input id="assetCost" type="number" min="0" step="0.01" placeholder="e.g., 12000" />
+                </div>
+              </div>
+
+              <div>
+                <label for="usefulLife">Useful life (months)</label>
+                <div class="field">
+                  <input id="usefulLife" type="number" min="1" step="1" value="36" />
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="salvageValue">Salvage value</label>
+                <div class="field">
+                  <input id="salvageValue" type="number" min="0" step="0.01" value="0" />
+                </div>
+              </div>
+
+              <button id="addAsset" class="btn btn-secondary" type="button">
+                Add asset
+              </button>
+            </div>
+
+            <div class="status">
+              <span id="statusDot" class="dot"></span>
+              <span id="statusText">Ready</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ============================================
+    // OFFICE.JS INTEGRATION - YOUR WORKING CODE
+    // ============================================
+
+    Office.onReady(function(info) {
+      if (info.host === Office.HostType.Excel) {
+        document.getElementById("createTemplate").onclick = createTemplate;
+        document.getElementById("addAsset").onclick = addAsset;
+        setStatus("ok", "Connected to Excel");
+      }
+    });
+
+    // Status and toast helpers
+    function setStatus(type, text) {
+      var dot = document.getElementById("statusDot");
+      dot.className = "dot" + (type ? " " + type : "");
+      document.getElementById("statusText").textContent = text;
+    }
+
+    var toastTimer = null;
+    function toast(msg) {
+      var el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { el.classList.remove("show"); }, 2500);
+    }
+
+    // ============================================
+    // CREATE TEMPLATE FUNCTION
+    // ============================================
+    function createTemplate() {
+      setStatus("", "Creating template…");
+      toast("Creating template…");
+
+      Excel.run(function(context) {
+        var startDateInput = document.getElementById("startDate").value;
+        var numPeriods = parseInt(document.getElementById("numPeriods").value) || 36;
+        
+        var sheets = context.workbook.worksheets;
+        sheets.load("items/name");
+        
+        return context.sync().then(function() {
+          // Delete existing Capex sheet if exists
+          for (var i = 0; i < sheets.items.length; i++) {
+            if (sheets.items[i].name === "Capex") {
+              sheets.items[i].delete();
+              break;
+            }
+          }
+          
+          var sheet = sheets.add("Capex");
+          var lastCol = getColumnLetter(7 + numPeriods - 1);
+          var lastAssetRow = 50;
+          
+          // ROW 1: Title
+          sheet.getRange("A1").values = [["Capex and D&A Calculator"]];
+          sheet.getRange("A1").format.font.bold = true;
+          sheet.getRange("A1").format.font.size = 16;
+          sheet.getRange("A1").format.font.color = "#217346";
+          
+          // ROW 3: Start date row
+          sheet.getRange("G3").values = [["Start date"]];
+          sheet.getRange("G3").format.font.bold = true;
+          sheet.getRange("H3").values = [[startDateInput]];
+          sheet.getRange("H3").numberFormat = [["yyyy-mm-dd"]];
+          
+          for (var i = 1; i < numPeriods; i++) {
+            var col = getColumnLetter(7 + i);
+            var prevCol = getColumnLetter(6 + i);
+            sheet.getRange(col + "3").formulas = [["=EDATE(" + prevCol + "3,1)"]];
+            sheet.getRange(col + "3").numberFormat = [["yyyy-mm-dd"]];
+          }
+          
+          // ROW 4: End date row
+          sheet.getRange("G4").values = [["End date"]];
+          sheet.getRange("G4").format.font.bold = true;
+          for (var i = 0; i < numPeriods; i++) {
+            var col = getColumnLetter(7 + i);
+            sheet.getRange(col + "4").formulas = [["=EOMONTH(" + col + "3,0)"]];
+            sheet.getRange(col + "4").numberFormat = [["yyyy-mm-dd"]];
+          }
+          
+          // ROW 5: Period numbers
+          sheet.getRange("G5").values = [["Period"]];
+          sheet.getRange("G5").format.font.bold = true;
+          for (var i = 0; i < numPeriods; i++) {
+            var col = getColumnLetter(7 + i);
+            sheet.getRange(col + "5").values = [[i + 1]];
+            sheet.getRange(col + "5").format.horizontalAlignment = "Center";
+          }
+          
+          // ROW 6: Total D&A
+          sheet.getRange("A6").values = [["Total D&A"]];
+          sheet.getRange("A6").format.font.bold = true;
+          sheet.getRange("A6:G6").format.fill.color = "#FFF2CC";
+          
+          for (var p = 0; p < numPeriods; p++) {
+            var col = getColumnLetter(7 + p);
+            sheet.getRange(col + "6").formulas = [["=SUM(" + col + "9:" + col + lastAssetRow + ")"]];
+            sheet.getRange(col + "6").numberFormat = [["#,##0.00"]];
+            sheet.getRange(col + "6").format.font.bold = true;
+            sheet.getRange(col + "6").format.fill.color = "#FFF2CC";
+          }
+          
+          // ROW 7: Capex Total
+          sheet.getRange("A7").values = [["Capex Total"]];
+          sheet.getRange("A7").format.font.bold = true;
+          sheet.getRange("A7:G7").format.fill.color = "#DDEBF7";
+          
+          for (var p = 0; p < numPeriods; p++) {
+            var col = getColumnLetter(7 + p);
+            sheet.getRange(col + "7").formulas = [["=SUMIF($C$9:$C$" + lastAssetRow + "," + col + "4,$E$9:$E$" + lastAssetRow + ")"]];
+            sheet.getRange(col + "7").numberFormat = [["#,##0.00"]];
+            sheet.getRange(col + "7").format.font.bold = true;
+            sheet.getRange(col + "7").format.fill.color = "#DDEBF7";
+          }
+          
+          // ROW 8: Column Headers
+          var headers = sheet.getRange("A8:G8");
+          headers.values = [["Assets", "Date", "End period", "Period", "Cost", "Useful Life", "Salvage"]];
+          headers.format.font.bold = true;
+          headers.format.fill.color = "#217346";
+          headers.format.font.color = "#FFFFFF";
+          
+          for (var p = 0; p < numPeriods; p++) {
+            var col = getColumnLetter(7 + p);
+            sheet.getRange(col + "8").format.fill.color = "#217346";
+          }
+          
+          // ROWS 9-50: Asset rows with formulas
+          for (var row = 9; row <= lastAssetRow; row++) {
+            sheet.getRange("C" + row).formulas = [['=IF(B' + row + '="","-",EOMONTH(B' + row + ',0))']];
+            sheet.getRange("C" + row).numberFormat = [["yyyy-mm-dd"]];
+            sheet.getRange("D" + row).formulas = [['=IF(C' + row + '="-",0,MATCH(C' + row + ',$H$4:$' + lastCol + '$4,0))']];
+            
+            for (var p = 0; p < numPeriods; p++) {
+              var col = getColumnLetter(7 + p);
+              var formula = '=IF(OR($A' + row + '="",$D' + row + '=0),0,IF(AND(' + (p+1) + '>=$D' + row + ',' + (p+1) + '<$D' + row + '+$F' + row + '),($E' + row + '-$G' + row + ')/$F' + row + ',0))';
+              sheet.getRange(col + row).formulas = [[formula]];
+              sheet.getRange(col + row).numberFormat = [["#,##0.00"]];
+            }
+          }
+          
+          // Formatting
+          sheet.getRange("B9:B" + lastAssetRow).numberFormat = [["yyyy-mm-dd"]];
+          sheet.getRange("E9:E" + lastAssetRow).numberFormat = [["#,##0.00"]];
+          sheet.getRange("G9:G" + lastAssetRow).numberFormat = [["#,##0.00"]];
+          sheet.getRange("A:G").format.autofitColumns();
+          
+          for (var p = 0; p < numPeriods; p++) {
+            var col = getColumnLetter(7 + p);
+            sheet.getRange(col + "1").format.columnWidth = 75;
+          }
+          
+          sheet.freezePanes.freezeRows(8);
+          sheet.freezePanes.freezeColumns(7);
+          
+          for (var row = 10; row <= lastAssetRow; row += 2) {
+            sheet.getRange("A" + row + ":" + lastCol + row).format.fill.color = "#F9F9F9";
+          }
+          
+          sheet.activate();
+          return context.sync();
+        }).then(function() {
+          setStatus("ok", "Template created with " + numPeriods + " periods!");
+          toast("Template created!");
+        });
+      }).catch(function(error) {
+        setStatus("error", "Error: " + error.message);
+        toast("Error creating template");
+        console.error(error);
+      });
+    }
+
+    // ============================================
+    // ADD ASSET FUNCTION
+    // ============================================
+    function addAsset() {
+      var assetName = document.getElementById("assetName").value;
+      var assetCost = document.getElementById("assetCost").value;
+
+      if (!assetName || !assetCost) {
+        setStatus("warn", "Please fill in asset name and cost");
+        toast("Missing required fields");
+        return;
+      }
+
+      setStatus("", "Adding asset…");
+      toast("Adding asset…");
+
+      Excel.run(function(context) {
+        var assetDate = document.getElementById("assetDate").value;
+        var usefulLife = document.getElementById("usefulLife").value;
+        var salvageValue = document.getElementById("salvageValue").value || "0";
+        
+        var sheet = context.workbook.worksheets.getItem("Capex");
+        var searchRange = sheet.getRange("A9:A50");
+        searchRange.load("values");
+        
+        return context.sync().then(function() {
+          var targetRow = -1;
+          for (var i = 0; i < searchRange.values.length; i++) {
+            if (!searchRange.values[i][0]) {
+              targetRow = 9 + i;
+              break;
+            }
+          }
+          
+          if (targetRow === -1) {
+            setStatus("warn", "No empty rows available");
+            toast("Template is full");
+            return context.sync();
+          }
+          
+          sheet.getRange("A" + targetRow).values = [[assetName]];
+          sheet.getRange("B" + targetRow).values = [[assetDate]];
+          sheet.getRange("B" + targetRow).numberFormat = [["yyyy-mm-dd"]];
+          sheet.getRange("E" + targetRow).values = [[parseFloat(assetCost)]];
+          sheet.getRange("E" + targetRow).numberFormat = [["#,##0.00"]];
+          sheet.getRange("F" + targetRow).values = [[parseInt(usefulLife)]];
+          sheet.getRange("G" + targetRow).values = [[parseFloat(salvageValue)]];
+          sheet.getRange("G" + targetRow).numberFormat = [["#,##0.00"]];
+          
+          return context.sync();
+        }).then(function() {
+          document.getElementById("assetName").value = "";
+          document.getElementById("assetCost").value = "";
+          setStatus("ok", "Asset '" + assetName + "' added!");
+          toast("Asset added!");
+        });
+      }).catch(function(error) {
+        setStatus("error", "Error: " + error.message);
+        toast("Error adding asset");
+        console.error(error);
+      });
+    }
+
+    // ============================================
+    // HELPER FUNCTION
+    // ============================================
+    function getColumnLetter(index) {
+      var letter = "";
+      index = index + 1;
+      while (index > 0) {
+        var remainder = (index - 1) % 26;
+        letter = String.fromCharCode(65 + remainder) + letter;
+        index = Math.floor((index - 1) / 26);
+      }
+      return letter;
+    }
+  </script>
+</body>
+</html>
