@@ -2,21 +2,21 @@
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="TaskPaneApp">
   <Id>8e79215f-32aa-467a-97d4-bd1fc6b3c78b</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Contoso</ProviderName>
+  <ProviderName>Andrepn98</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="orna-addin"/>
-  <Description DefaultValue="A template to get started."/>
-  <IconUrl DefaultValue="https://www.contoso.com/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://www.contoso.com/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://www.contoso.com/help"/>
+  <DisplayName DefaultValue="Capex D&amp;A Calculator"/>
+  <Description DefaultValue="Create depreciation schedules instantly"/>
+  <IconUrl DefaultValue="https://andrepn98.github.io/Capex-addin/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://andrepn98.github.io/Capex-addin/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://github.com/Andrepn98/Capex-addin"/>
   <AppDomains>
-    <AppDomain>https://www.contoso.com</AppDomain>
+    <AppDomain>https://andrepn98.github.io</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Workbook"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://www.contoso.com/taskpane.html"/>
+    <SourceLocation DefaultValue="https://andrepn98.github.io/Capex-addin/taskpane.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -62,23 +62,23 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://www.contoso.com/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://www.contoso.com/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://www.contoso.com/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://andrepn98.github.io/Capex-addin/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://andrepn98.github.io/Capex-addin/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://andrepn98.github.io/Capex-addin/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://www.contoso.com/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://www.contoso.com/taskpane.html"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/Andrepn98/Capex-addin"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://andrepn98.github.io/Capex-addin/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://andrepn98.github.io/Capex-addin/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Get started with your sample add-in!"/>
-        <bt:String id="CommandsGroup.Label" DefaultValue="Commands Group"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Show Task Pane"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Capex D&amp;A Calculator Ready!"/>
+        <bt:String id="CommandsGroup.Label" DefaultValue="Capex Tools"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Capex Calculator"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Your sample add-in loaded successfully. Go to the HOME tab and click the 'Show Task Pane' button to get started."/>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Click to Show a Taskpane"/>
+        <bt:String id="GetStarted.Description" DefaultValue="Create depreciation schedules instantly. Click the Capex Calculator button to get started."/>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open Capex and D&amp;A Calculator"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
