@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ORNA • Capex & Depreciation</title>
+  <title>ORNA • Financial Modeling Suite</title>
 
   <!-- Office.js for Excel integration -->
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
@@ -29,9 +29,8 @@
     }
 
     *{ box-sizing: border-box; }
-    html, body{ height: 100%; }
+    html, body{ height: 100%; margin: 0; }
     body{
-      margin: 0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       background: var(--bg);
       color: var(--text);
@@ -51,6 +50,7 @@
       overflow: hidden;
     }
 
+    /* Header */
     .header{
       padding: 16px 16px 14px;
       display: flex;
@@ -60,6 +60,25 @@
       background: linear-gradient(180deg, rgba(47,109,179,0.06), rgba(244,196,48,0.02));
     }
 
+    .header-with-back{
+      padding: 12px 16px;
+    }
+
+    .back-btn{
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+    .back-btn:hover{
+      background: rgba(47,109,179,0.1);
+    }
+
     .brand-icon{
       width: 28px;
       height: 28px;
@@ -67,6 +86,7 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 4px;
       position: relative;
+      flex-shrink: 0;
     }
     .brand-icon span{
       background: var(--blue);
@@ -84,16 +104,26 @@
       box-shadow: 0 6px 16px rgba(244,196,48,0.45);
     }
 
-    .hgroup{ min-width: 0; }
+    .brand-icon-sm{
+      width: 22px;
+      height: 22px;
+      gap: 3px;
+    }
+    .brand-icon-sm::after{
+      width: 8px;
+      height: 8px;
+    }
+
+    .hgroup{ min-width: 0; flex: 1; }
     .title{
       font-size: 16px;
       font-weight: 700;
       letter-spacing: -0.01em;
       margin: 0;
       line-height: 1.15;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+    .title-sm{
+      font-size: 14px;
     }
     .subtitle{
       margin: 4px 0 0;
@@ -102,7 +132,9 @@
       line-height: 1.25;
     }
 
+    /* Content */
     .content{ padding: 14px 16px 16px; }
+    
     .section{
       padding: 14px 0 4px;
     }
@@ -121,6 +153,96 @@
       margin: 0 0 10px;
     }
 
+    /* Module Cards */
+    .modules-grid{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .module-card{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .module-card:hover{
+      border-color: var(--blue);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+
+    .module-icon{
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .module-icon.capex{
+      background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+      color: #2E7D32;
+    }
+    .module-icon.breakeven{
+      background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+      color: #1565C0;
+    }
+    .module-icon.forecast{
+      background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+      color: #E65100;
+    }
+    .module-icon.coming-soon{
+      background: linear-gradient(135deg, #F5F5F5, #EEEEEE);
+      color: #9E9E9E;
+    }
+
+    .module-info{ flex: 1; min-width: 0; }
+    .module-title{
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      color: var(--text);
+    }
+    .module-desc{
+      font-size: 12.5px;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .module-arrow{
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+
+    .module-card.disabled{
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .module-card.disabled:hover{
+      border-color: var(--line);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .badge{
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #F3F4F6;
+      color: #6B7280;
+      margin-left: 8px;
+    }
+
+    /* Form elements */
     .grid{
       display: grid;
       grid-template-columns: 1fr;
@@ -195,10 +317,6 @@
       box-shadow: 0 12px 24px rgba(47,109,179,0.28);
     }
     .btn-primary:hover{ filter: brightness(1.03); }
-    .btn-primary:disabled{
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
 
     .btn-secondary{
       background: #fff;
@@ -255,117 +373,213 @@
       opacity: 1;
       transform: translateX(-50%) translateY(-2px);
     }
+
+    /* Page visibility */
+    .page{ display: none; }
+    .page.active{ display: block; }
+
+    /* Footer */
+    .footer{
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+      font-size: 11px;
+      color: #9CA3AF;
+    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="panel">
-      <div class="header">
-        <div class="brand-icon" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <div class="hgroup">
-          <p class="title">Capex & D&A Calculator</p>
-          <p class="subtitle">by ORNA</p>
-        </div>
-      </div>
-
-      <div class="content">
-        <!-- TEMPLATE SETUP -->
-        <div class="section">
-          <p class="kicker">Template setup</p>
-
-          <div class="grid">
-            <div>
-              <label for="startDate">Start date</label>
-              <div class="field">
-                <input id="startDate" type="date" value="2026-01-01" />
-                <button class="icon-btn" type="button" title="Pick date" aria-label="Pick date" onclick="document.getElementById('startDate').showPicker?.()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label for="numPeriods">Number of periods (months)</label>
-              <div class="field">
-                <input id="numPeriods" type="number" min="1" step="1" value="36" placeholder="e.g., 36" />
-              </div>
-            </div>
-
-            <button id="createTemplate" class="btn btn-primary" type="button">
-              Create template
-            </button>
+      
+      <!-- ==================== HOME PAGE ==================== -->
+      <div id="page-home" class="page active">
+        <div class="header">
+          <div class="brand-icon" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="hgroup">
+            <p class="title">ORNA</p>
+            <p class="subtitle">Financial Modeling Suite</p>
           </div>
         </div>
 
-        <!-- ADD ASSET -->
-        <div class="section">
-          <p class="kicker">Add asset</p>
-
-          <div class="grid">
-            <div>
-              <label for="assetName">Asset name</label>
-              <div class="field">
-                <input id="assetName" type="text" placeholder="e.g., MacBook Pro" />
-              </div>
-            </div>
-
-            <div>
-              <label for="assetDate">Purchase date</label>
-              <div class="field">
-                <input id="assetDate" type="date" value="2026-01-01" />
-                <button class="icon-btn" type="button" title="Pick date" aria-label="Pick date" onclick="document.getElementById('assetDate').showPicker?.()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
+        <div class="content">
+          <div class="section">
+            <p class="kicker">Modules</p>
+            
+            <div class="modules-grid">
+              <!-- Capex & D&A Module -->
+              <div class="module-card" onclick="showPage('page-capex')">
+                <div class="module-icon capex">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
                   </svg>
-                </button>
+                </div>
+                <div class="module-info">
+                  <p class="module-title">Capex & D&A</p>
+                  <p class="module-desc">Build depreciation schedules and track capital expenditures</p>
+                </div>
+                <div class="module-arrow">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Break-Even Analysis (Coming Soon) -->
+              <div class="module-card disabled">
+                <div class="module-icon coming-soon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="20" x2="12" y2="10"></line>
+                    <line x1="18" y1="20" x2="18" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="16"></line>
+                  </svg>
+                </div>
+                <div class="module-info">
+                  <p class="module-title">Break-Even Analysis <span class="badge">Coming Soon</span></p>
+                  <p class="module-desc">Calculate break-even points and sensitivity analysis</p>
+                </div>
+              </div>
+
+              <!-- Revenue Forecast (Coming Soon) -->
+              <div class="module-card disabled">
+                <div class="module-icon coming-soon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
+                </div>
+                <div class="module-info">
+                  <p class="module-title">Revenue Forecast <span class="badge">Coming Soon</span></p>
+                  <p class="module-desc">Project revenue with multiple scenarios</p>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div class="row">
+        <div class="footer">
+          ORNA v1.0 • Built for financial professionals
+        </div>
+      </div>
+
+      <!-- ==================== CAPEX MODULE PAGE ==================== -->
+      <div id="page-capex" class="page">
+        <div class="header header-with-back">
+          <button class="back-btn" onclick="showPage('page-home')" title="Back to Home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <div class="brand-icon brand-icon-sm" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="hgroup">
+            <p class="title title-sm">Capex & D&A Calculator</p>
+            <p class="subtitle">by ORNA</p>
+          </div>
+        </div>
+
+        <div class="content">
+          <!-- TEMPLATE SETUP -->
+          <div class="section">
+            <p class="kicker">Template setup</p>
+
+            <div class="grid">
               <div>
-                <label for="assetCost">Cost</label>
+                <label for="startDate">Start date</label>
                 <div class="field">
-                  <input id="assetCost" type="number" min="0" step="0.01" placeholder="e.g., 12000" />
+                  <input id="startDate" type="date" value="2026-01-01" />
+                  <button class="icon-btn" type="button" title="Pick date" onclick="document.getElementById('startDate').showPicker?.()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
 
               <div>
-                <label for="usefulLife">Useful life (months)</label>
+                <label for="numPeriods">Number of periods (months)</label>
                 <div class="field">
-                  <input id="usefulLife" type="number" min="1" step="1" value="36" />
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div>
-                <label for="salvageValue">Salvage value</label>
-                <div class="field">
-                  <input id="salvageValue" type="number" min="0" step="0.01" value="0" />
+                  <input id="numPeriods" type="number" min="1" step="1" value="36" placeholder="e.g., 36" />
                 </div>
               </div>
 
-              <button id="addAsset" class="btn btn-secondary" type="button">
-                Add asset
+              <button id="createTemplate" class="btn btn-primary" type="button">
+                Create template
               </button>
             </div>
+          </div>
 
-            <div class="status">
-              <span id="statusDot" class="dot"></span>
-              <span id="statusText">Ready</span>
+          <!-- ADD ASSET -->
+          <div class="section">
+            <p class="kicker">Add asset</p>
+
+            <div class="grid">
+              <div>
+                <label for="assetName">Asset name</label>
+                <div class="field">
+                  <input id="assetName" type="text" placeholder="e.g., MacBook Pro" />
+                </div>
+              </div>
+
+              <div>
+                <label for="assetDate">Purchase date</label>
+                <div class="field">
+                  <input id="assetDate" type="date" value="2026-01-01" />
+                  <button class="icon-btn" type="button" title="Pick date" onclick="document.getElementById('assetDate').showPicker?.()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="assetCost">Cost</label>
+                  <div class="field">
+                    <input id="assetCost" type="number" min="0" step="0.01" placeholder="e.g., 12000" />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="usefulLife">Useful life (months)</label>
+                  <div class="field">
+                    <input id="usefulLife" type="number" min="1" step="1" value="36" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="salvageValue">Salvage value</label>
+                  <div class="field">
+                    <input id="salvageValue" type="number" min="0" step="0.01" value="0" />
+                  </div>
+                </div>
+
+                <button id="addAsset" class="btn btn-secondary" type="button">
+                  Add asset
+                </button>
+              </div>
+
+              <div class="status">
+                <span id="statusDot" class="dot"></span>
+                <span id="statusText">Ready</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -373,9 +587,20 @@
 
   <script>
     // ============================================
-    // OFFICE.JS INTEGRATION - YOUR WORKING CODE
+    // PAGE NAVIGATION
     // ============================================
+    function showPage(pageId) {
+      // Hide all pages
+      document.querySelectorAll('.page').forEach(function(page) {
+        page.classList.remove('active');
+      });
+      // Show selected page
+      document.getElementById(pageId).classList.add('active');
+    }
 
+    // ============================================
+    // OFFICE.JS INTEGRATION
+    // ============================================
     Office.onReady(function(info) {
       if (info.host === Office.HostType.Excel) {
         document.getElementById("createTemplate").onclick = createTemplate;
@@ -401,7 +626,7 @@
     }
 
     // ============================================
-    // CREATE TEMPLATE FUNCTION
+    // CAPEX MODULE - CREATE TEMPLATE
     // ============================================
     function createTemplate() {
       setStatus("", "Creating template…");
@@ -415,7 +640,6 @@
         sheets.load("items/name");
         
         return context.sync().then(function() {
-          // Delete existing Capex sheet if exists
           for (var i = 0; i < sheets.items.length; i++) {
             if (sheets.items[i].name === "Capex") {
               sheets.items[i].delete();
@@ -548,7 +772,7 @@
     }
 
     // ============================================
-    // ADD ASSET FUNCTION
+    // CAPEX MODULE - ADD ASSET
     // ============================================
     function addAsset() {
       var assetName = document.getElementById("assetName").value;
