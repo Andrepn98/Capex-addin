@@ -15,14 +15,11 @@
       --line: #E6EAF0;
       --text: #0F172A;
       --muted: #6B7280;
-
       --blue: #2F6DB3;
       --blue-2: #1E4E8C;
       --yellow: #F4C430;
-
       --radius: 14px;
       --radius-sm: 10px;
-
       --shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
       --shadow-sm: 0 8px 20px rgba(15, 23, 42, 0.08);
       --focus: 0 0 0 3px rgba(47, 109, 179, 0.18);
@@ -31,361 +28,113 @@
     *{ box-sizing: border-box; }
     html, body{ height: 100%; margin: 0; }
     body{
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
     }
 
-    .wrap{
-      padding: 16px 14px 18px;
-      max-width: 520px;
-      margin: 0 auto;
-    }
-
-    .panel{
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
-      overflow: hidden;
-    }
+    .wrap{ padding: 16px 14px 18px; max-width: 520px; margin: 0 auto; }
+    .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
 
     /* Header */
-    .header{
-      padding: 16px 16px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(47,109,179,0.06), rgba(244,196,48,0.02));
-    }
+    .header{ padding: 16px 16px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(47,109,179,0.06), rgba(244,196,48,0.02)); }
+    .header-with-back{ padding: 12px 16px; }
+    .back-btn{ background: none; border: none; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.15s ease; }
+    .back-btn:hover{ background: rgba(47,109,179,0.1); }
 
-    .header-with-back{
-      padding: 12px 16px;
-    }
-
-    .back-btn{
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 6px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s ease;
-    }
-    .back-btn:hover{
-      background: rgba(47,109,179,0.1);
-    }
-
-    .brand-icon{
-      width: 28px;
-      height: 28px;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 4px;
-      position: relative;
-      flex-shrink: 0;
-    }
-    .brand-icon span{
-      background: var(--blue);
-      border-radius: 7px;
-    }
-    .brand-icon::after{
-      content:"";
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--yellow);
-      right: -1px;
-      top: -1px;
-      box-shadow: 0 6px 16px rgba(244,196,48,0.45);
-    }
-
-    .brand-icon-sm{
-      width: 22px;
-      height: 22px;
-      gap: 3px;
-    }
-    .brand-icon-sm::after{
-      width: 8px;
-      height: 8px;
-    }
+    .brand-icon{ width: 28px; height: 28px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; position: relative; flex-shrink: 0; }
+    .brand-icon span{ background: var(--blue); border-radius: 7px; }
+    .brand-icon::after{ content:""; position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--yellow); right: -1px; top: -1px; box-shadow: 0 6px 16px rgba(244,196,48,0.45); }
+    .brand-icon-sm{ width: 22px; height: 22px; gap: 3px; }
+    .brand-icon-sm::after{ width: 8px; height: 8px; }
 
     .hgroup{ min-width: 0; flex: 1; }
-    .title{
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      margin: 0;
-      line-height: 1.15;
-    }
-    .title-sm{
-      font-size: 14px;
-    }
-    .subtitle{
-      margin: 4px 0 0;
-      font-size: 12.5px;
-      color: var(--muted);
-      line-height: 1.25;
-    }
+    .title{ font-size: 16px; font-weight: 700; letter-spacing: -0.01em; margin: 0; line-height: 1.15; }
+    .title-sm{ font-size: 14px; }
+    .subtitle{ margin: 4px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.25; }
 
     /* Content */
     .content{ padding: 14px 16px 16px; }
-    
-    .section{
-      padding: 14px 0 4px;
-    }
-    .section + .section{
-      border-top: 1px solid var(--line);
-      margin-top: 12px;
-      padding-top: 18px;
-    }
-
-    .kicker{
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #667085;
-      font-weight: 700;
-      margin: 0 0 10px;
-    }
+    .section{ padding: 14px 0 4px; }
+    .section + .section{ border-top: 1px solid var(--line); margin-top: 12px; padding-top: 18px; }
+    .kicker{ font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #667085; font-weight: 700; margin: 0 0 10px; }
 
     /* Module Cards */
-    .modules-grid{
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .module-card{
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      padding: 16px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-    }
-    .module-card:hover{
-      border-color: var(--blue);
-      box-shadow: var(--shadow-sm);
-      transform: translateY(-2px);
-    }
-
-    .module-icon{
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .module-icon.capex{
-      background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
-      color: #2E7D32;
-    }
-    .module-icon.breakeven{
-      background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-      color: #1565C0;
-    }
-    .module-icon.forecast{
-      background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
-      color: #E65100;
-    }
-    .module-icon.coming-soon{
-      background: linear-gradient(135deg, #F5F5F5, #EEEEEE);
-      color: #9E9E9E;
-    }
-
+    .modules-grid{ display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .module-card{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 14px; }
+    .module-card:hover{ border-color: var(--blue); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+    .module-icon{ width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .module-icon.capex{ background: linear-gradient(135deg, #E8F5E9, #C8E6C9); color: #2E7D32; }
+    .module-icon.financial{ background: linear-gradient(135deg, #E3F2FD, #BBDEFB); color: #1565C0; }
+    .module-icon.coming-soon{ background: linear-gradient(135deg, #F5F5F5, #EEEEEE); color: #9E9E9E; }
     .module-info{ flex: 1; min-width: 0; }
-    .module-title{
-      font-size: 14px;
-      font-weight: 700;
-      margin: 0 0 4px;
-      color: var(--text);
-    }
-    .module-desc{
-      font-size: 12.5px;
-      color: var(--muted);
-      margin: 0;
-      line-height: 1.4;
-    }
-
-    .module-arrow{
-      color: #9CA3AF;
-      margin-top: 2px;
-    }
-
-    .module-card.disabled{
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .module-card.disabled:hover{
-      border-color: var(--line);
-      box-shadow: none;
-      transform: none;
-    }
-
-    .badge{
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #F3F4F6;
-      color: #6B7280;
-      margin-left: 8px;
-    }
+    .module-title{ font-size: 14px; font-weight: 700; margin: 0 0 4px; color: var(--text); }
+    .module-desc{ font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.4; }
+    .module-arrow{ color: #9CA3AF; margin-top: 2px; }
+    .module-card.disabled{ opacity: 0.6; cursor: not-allowed; }
+    .module-card.disabled:hover{ border-color: var(--line); box-shadow: none; transform: none; }
+    .badge{ font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: #F3F4F6; color: #6B7280; margin-left: 8px; }
 
     /* Form elements */
-    .grid{
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    label{
-      display: block;
-      font-size: 12.5px;
-      color: #374151;
-      font-weight: 600;
-      margin: 0 0 6px;
-    }
-
-    .field{
-      background: #FFFFFF;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: box-shadow .15s ease, border-color .15s ease;
-    }
-    .field:focus-within{
-      border-color: rgba(47,109,179,0.55);
-      box-shadow: var(--focus);
-    }
-
-    input{
-      border: 0;
-      outline: 0;
-      width: 100%;
-      font-size: 14px;
-      color: var(--text);
-      background: transparent;
-    }
+    .grid{ display: grid; grid-template-columns: 1fr; gap: 10px; }
+    label{ display: block; font-size: 12.5px; color: #374151; font-weight: 600; margin: 0 0 6px; }
+    .field{ background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; align-items: center; gap: 10px; transition: box-shadow .15s ease, border-color .15s ease; }
+    .field:focus-within{ border-color: rgba(47,109,179,0.55); box-shadow: var(--focus); }
+    input{ border: 0; outline: 0; width: 100%; font-size: 14px; color: var(--text); background: transparent; }
     input::placeholder{ color: #9AA4B2; }
-
-    .icon-btn{
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      background: #FAFBFD;
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      flex: 0 0 auto;
-    }
+    .icon-btn{ width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: #FAFBFD; display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; }
     .icon-btn:hover{ background: #F3F6FB; }
 
-    .btn{
-      border: 1px solid transparent;
-      border-radius: 12px;
-      height: 44px;
-      padding: 0 14px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      transition: filter 0.15s ease;
-    }
+    /* File upload */
+    .file-upload{ border: 2px dashed var(--line); border-radius: var(--radius-sm); padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: #FAFBFC; }
+    .file-upload:hover{ border-color: var(--blue); background: #F0F7FF; }
+    .file-upload.dragover{ border-color: var(--blue); background: #E8F4FD; }
+    .file-upload-icon{ color: var(--blue); margin-bottom: 8px; }
+    .file-upload-text{ font-size: 13px; color: var(--muted); margin: 0; }
+    .file-upload-text strong{ color: var(--blue); }
+    .file-name{ font-size: 12px; color: var(--text); margin-top: 8px; padding: 6px 10px; background: #E8F5E9; border-radius: 6px; display: none; }
+    .file-name.show{ display: inline-block; }
 
-    .btn-primary{
-      background: linear-gradient(180deg, var(--blue), var(--blue-2));
-      color: #fff;
-      box-shadow: 0 12px 24px rgba(47,109,179,0.28);
-    }
+    /* Buttons */
+    .btn{ border: 1px solid transparent; border-radius: 12px; height: 44px; padding: 0 14px; font-size: 14px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; transition: filter 0.15s ease, opacity 0.15s ease; }
+    .btn-primary{ background: linear-gradient(180deg, var(--blue), var(--blue-2)); color: #fff; box-shadow: 0 12px 24px rgba(47,109,179,0.28); }
     .btn-primary:hover{ filter: brightness(1.03); }
-
-    .btn-secondary{
-      background: #fff;
-      border-color: var(--line);
-      color: var(--text);
-    }
+    .btn-primary:disabled{ opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary{ background: #fff; border-color: var(--line); color: var(--text); }
     .btn-secondary:hover{ background: #FAFBFD; }
+    .row{ display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: end; }
+    @media (max-width: 420px){ .row{ grid-template-columns: 1fr; } }
 
-    .row{
-      display: grid;
-      grid-template-columns: 1fr 140px;
-      gap: 10px;
-      align-items: end;
-    }
-    @media (max-width: 420px){
-      .row{ grid-template-columns: 1fr; }
-    }
-
-    .status{
-      margin-top: 12px;
-      font-size: 12.5px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .dot{
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #9CA3AF;
-    }
+    /* Status */
+    .status{ margin-top: 12px; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .dot{ width: 8px; height: 8px; border-radius: 50%; background: #9CA3AF; }
     .dot.ok{ background: #22C55E; }
     .dot.warn{ background: #F59E0B; }
     .dot.error{ background: #EF4444; }
+    .dot.processing{ background: var(--blue); animation: pulse 1s infinite; }
+    @keyframes pulse{ 0%, 100%{ opacity: 1; } 50%{ opacity: 0.5; } }
 
-    .toast{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 14px;
-      background: rgba(15, 23, 42, 0.92);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-size: 12.5px;
-      box-shadow: var(--shadow);
-      max-width: 92vw;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .toast.show{
-      opacity: 1;
-      transform: translateX(-50%) translateY(-2px);
-    }
+    /* Toast */
+    .toast{ position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px; background: rgba(15, 23, 42, 0.92); color: #fff; padding: 10px 12px; border-radius: 12px; font-size: 12.5px; box-shadow: var(--shadow); max-width: 92vw; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+    .toast.show{ opacity: 1; transform: translateX(-50%) translateY(-2px); }
 
     /* Page visibility */
     .page{ display: none; }
     .page.active{ display: block; }
 
     /* Footer */
-    .footer{
-      padding: 12px 16px;
-      border-top: 1px solid var(--line);
-      text-align: center;
-      font-size: 11px;
-      color: #9CA3AF;
-    }
+    .footer{ padding: 12px 16px; border-top: 1px solid var(--line); text-align: center; font-size: 11px; color: #9CA3AF; }
+
+    /* Progress indicator */
+    .progress-steps{ display: flex; gap: 8px; margin-bottom: 16px; }
+    .progress-step{ flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+    .progress-step.active{ background: var(--blue); }
+    .progress-step.done{ background: #22C55E; }
+
+    /* Info box */
+    .info-box{ background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: var(--radius-sm); padding: 12px; font-size: 12.5px; color: #0369A1; margin-top: 12px; }
+    .info-box ul{ margin: 8px 0 0; padding-left: 18px; }
+    .info-box li{ margin: 4px 0; }
   </style>
 </head>
 
@@ -424,15 +173,13 @@
                   <p class="module-desc">Build depreciation schedules and track capital expenditures</p>
                 </div>
                 <div class="module-arrow">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
               </div>
 
-              <!-- Break-Even Analysis (Coming Soon) -->
-              <div class="module-card disabled">
-                <div class="module-icon coming-soon">
+              <!-- Financial Analysis Module (NEW) -->
+              <div class="module-card" onclick="showPage('page-financial')">
+                <div class="module-icon financial">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="20" x2="12" y2="10"></line>
                     <line x1="18" y1="20" x2="18" y2="4"></line>
@@ -440,39 +187,36 @@
                   </svg>
                 </div>
                 <div class="module-info">
-                  <p class="module-title">Break-Even Analysis <span class="badge">Coming Soon</span></p>
-                  <p class="module-desc">Calculate break-even points and sensitivity analysis</p>
+                  <p class="module-title">Financial Analysis</p>
+                  <p class="module-desc">Import transactions, auto-categorize, and generate P&L</p>
+                </div>
+                <div class="module-arrow">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
               </div>
 
-              <!-- Revenue Forecast (Coming Soon) -->
+              <!-- Break-Even (Coming Soon) -->
               <div class="module-card disabled">
                 <div class="module-icon coming-soon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                  </svg>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                 </div>
                 <div class="module-info">
-                  <p class="module-title">Revenue Forecast <span class="badge">Coming Soon</span></p>
-                  <p class="module-desc">Project revenue with multiple scenarios</p>
+                  <p class="module-title">Break-Even Analysis <span class="badge">Coming Soon</span></p>
+                  <p class="module-desc">Calculate break-even points and sensitivity analysis</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="footer">
-          ORNA v1.0 • Built for financial professionals
-        </div>
+        <div class="footer">ORNA v1.0 • Built for financial professionals</div>
       </div>
 
       <!-- ==================== CAPEX MODULE PAGE ==================== -->
       <div id="page-capex" class="page">
         <div class="header header-with-back">
           <button class="back-btn" onclick="showPage('page-home')" title="Back to Home">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
           <div class="brand-icon brand-icon-sm" aria-hidden="true">
             <span></span><span></span><span></span><span></span>
@@ -484,98 +228,125 @@
         </div>
 
         <div class="content">
-          <!-- TEMPLATE SETUP -->
           <div class="section">
             <p class="kicker">Template setup</p>
-
             <div class="grid">
               <div>
                 <label for="startDate">Start date</label>
                 <div class="field">
                   <input id="startDate" type="date" value="2026-01-01" />
-                  <button class="icon-btn" type="button" title="Pick date" onclick="document.getElementById('startDate').showPicker?.()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                      <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                      <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
-                    </svg>
-                  </button>
                 </div>
               </div>
-
               <div>
                 <label for="numPeriods">Number of periods (months)</label>
                 <div class="field">
-                  <input id="numPeriods" type="number" min="1" step="1" value="36" placeholder="e.g., 36" />
+                  <input id="numPeriods" type="number" min="1" step="1" value="36" />
                 </div>
               </div>
+              <button id="createTemplate" class="btn btn-primary" type="button">Create template</button>
+            </div>
+          </div>
 
-              <button id="createTemplate" class="btn btn-primary" type="button">
-                Create template
+          <div class="section">
+            <p class="kicker">Add asset</p>
+            <div class="grid">
+              <div>
+                <label for="assetName">Asset name</label>
+                <div class="field"><input id="assetName" type="text" placeholder="e.g., MacBook Pro" /></div>
+              </div>
+              <div>
+                <label for="assetDate">Purchase date</label>
+                <div class="field"><input id="assetDate" type="date" value="2026-01-01" /></div>
+              </div>
+              <div class="row">
+                <div>
+                  <label for="assetCost">Cost</label>
+                  <div class="field"><input id="assetCost" type="number" min="0" step="0.01" placeholder="e.g., 12000" /></div>
+                </div>
+                <div>
+                  <label for="usefulLife">Useful life (months)</label>
+                  <div class="field"><input id="usefulLife" type="number" min="1" step="1" value="36" /></div>
+                </div>
+              </div>
+              <div class="row">
+                <div>
+                  <label for="salvageValue">Salvage value</label>
+                  <div class="field"><input id="salvageValue" type="number" min="0" step="0.01" value="0" /></div>
+                </div>
+                <button id="addAsset" class="btn btn-secondary" type="button">Add asset</button>
+              </div>
+              <div class="status">
+                <span id="capexStatusDot" class="dot"></span>
+                <span id="capexStatusText">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== FINANCIAL ANALYSIS MODULE PAGE ==================== -->
+      <div id="page-financial" class="page">
+        <div class="header header-with-back">
+          <button class="back-btn" onclick="showPage('page-home')" title="Back to Home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <div class="brand-icon brand-icon-sm" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="hgroup">
+            <p class="title title-sm">Financial Analysis</p>
+            <p class="subtitle">by ORNA</p>
+          </div>
+        </div>
+
+        <div class="content">
+          <!-- Step 1: Upload CSV -->
+          <div class="section">
+            <p class="kicker">Step 1: Upload Transactions</p>
+            
+            <div class="progress-steps">
+              <div class="progress-step active" id="step1"></div>
+              <div class="progress-step" id="step2"></div>
+              <div class="progress-step" id="step3"></div>
+            </div>
+
+            <div class="file-upload" id="dropZone" onclick="document.getElementById('csvFile').click()">
+              <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="handleFileSelect(event)" />
+              <div class="file-upload-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <p class="file-upload-text"><strong>Click to upload</strong> or drag and drop<br>CSV files only</p>
+              <div class="file-name" id="fileName"></div>
+            </div>
+
+            <div class="info-box">
+              <strong>Supported CSV formats:</strong>
+              <ul>
+                <li>Bank exports (date, description, amount)</li>
+                <li>Accounting exports with debit/credit columns</li>
+                <li>Any CSV with transaction data</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Step 2: Process -->
+          <div class="section">
+            <p class="kicker">Step 2: Process & Categorize</p>
+            <div class="grid">
+              <button id="processBtn" class="btn btn-primary" type="button" disabled onclick="processTransactions()">
+                Process Transactions
               </button>
             </div>
           </div>
 
-          <!-- ADD ASSET -->
-          <div class="section">
-            <p class="kicker">Add asset</p>
-
-            <div class="grid">
-              <div>
-                <label for="assetName">Asset name</label>
-                <div class="field">
-                  <input id="assetName" type="text" placeholder="e.g., MacBook Pro" />
-                </div>
-              </div>
-
-              <div>
-                <label for="assetDate">Purchase date</label>
-                <div class="field">
-                  <input id="assetDate" type="date" value="2026-01-01" />
-                  <button class="icon-btn" type="button" title="Pick date" onclick="document.getElementById('assetDate').showPicker?.()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path d="M8 2v3M16 2v3" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                      <path d="M3.5 9h17" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
-                      <path d="M6 5h12a2.5 2.5 0 0 1 2.5 2.5V19A2.5 2.5 0 0 1 18 21.5H6A2.5 2.5 0 0 1 3.5 19V7.5A2.5 2.5 0 0 1 6 5Z" stroke="#334155" stroke-width="2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div class="row">
-                <div>
-                  <label for="assetCost">Cost</label>
-                  <div class="field">
-                    <input id="assetCost" type="number" min="0" step="0.01" placeholder="e.g., 12000" />
-                  </div>
-                </div>
-
-                <div>
-                  <label for="usefulLife">Useful life (months)</label>
-                  <div class="field">
-                    <input id="usefulLife" type="number" min="1" step="1" value="36" />
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div>
-                  <label for="salvageValue">Salvage value</label>
-                  <div class="field">
-                    <input id="salvageValue" type="number" min="0" step="0.01" value="0" />
-                  </div>
-                </div>
-
-                <button id="addAsset" class="btn btn-secondary" type="button">
-                  Add asset
-                </button>
-              </div>
-
-              <div class="status">
-                <span id="statusDot" class="dot"></span>
-                <span id="statusText">Ready</span>
-              </div>
-            </div>
+          <!-- Status -->
+          <div class="status">
+            <span id="finStatusDot" class="dot"></span>
+            <span id="finStatusText">Upload a CSV file to begin</span>
           </div>
         </div>
       </div>
@@ -583,39 +354,28 @@
     </div>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="toast" class="toast"></div>
 
   <script>
+    // ============================================
+    // GLOBAL VARIABLES
+    // ============================================
+    var csvData = null;
+    var parsedTransactions = [];
+
     // ============================================
     // PAGE NAVIGATION
     // ============================================
     function showPage(pageId) {
-      // Hide all pages
       document.querySelectorAll('.page').forEach(function(page) {
         page.classList.remove('active');
       });
-      // Show selected page
       document.getElementById(pageId).classList.add('active');
     }
 
     // ============================================
-    // OFFICE.JS INTEGRATION
+    // TOAST & STATUS HELPERS
     // ============================================
-    Office.onReady(function(info) {
-      if (info.host === Office.HostType.Excel) {
-        document.getElementById("createTemplate").onclick = createTemplate;
-        document.getElementById("addAsset").onclick = addAsset;
-        setStatus("ok", "Connected to Excel");
-      }
-    });
-
-    // Status and toast helpers
-    function setStatus(type, text) {
-      var dot = document.getElementById("statusDot");
-      dot.className = "dot" + (type ? " " + type : "");
-      document.getElementById("statusText").textContent = text;
-    }
-
     var toastTimer = null;
     function toast(msg) {
       var el = document.getElementById("toast");
@@ -625,11 +385,565 @@
       toastTimer = setTimeout(function() { el.classList.remove("show"); }, 2500);
     }
 
+    function setCapexStatus(type, text) {
+      document.getElementById("capexStatusDot").className = "dot" + (type ? " " + type : "");
+      document.getElementById("capexStatusText").textContent = text;
+    }
+
+    function setFinStatus(type, text) {
+      document.getElementById("finStatusDot").className = "dot" + (type ? " " + type : "");
+      document.getElementById("finStatusText").textContent = text;
+    }
+
+    function updateProgress(step) {
+      document.getElementById("step1").className = "progress-step" + (step >= 1 ? " done" : "");
+      document.getElementById("step2").className = "progress-step" + (step >= 2 ? " done" : step === 1 ? " active" : "");
+      document.getElementById("step3").className = "progress-step" + (step >= 3 ? " done" : step === 2 ? " active" : "");
+    }
+
     // ============================================
-    // CAPEX MODULE - CREATE TEMPLATE
+    // OFFICE.JS INITIALIZATION
     // ============================================
-    function createTemplate() {
-      setStatus("", "Creating template…");
+    Office.onReady(function(info) {
+      if (info.host === Office.HostType.Excel) {
+        document.getElementById("createTemplate").onclick = createCapexTemplate;
+        document.getElementById("addAsset").onclick = addAsset;
+        setCapexStatus("ok", "Connected to Excel");
+        setFinStatus("ok", "Upload a CSV file to begin");
+      }
+    });
+
+    // ============================================
+    // FILE UPLOAD HANDLING
+    // ============================================
+    var dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      var files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].name.endsWith('.csv')) {
+        processFile(files[0]);
+      } else {
+        toast("Please upload a CSV file");
+      }
+    });
+
+    function handleFileSelect(event) {
+      var file = event.target.files[0];
+      if (file) {
+        processFile(file);
+      }
+    }
+
+    function processFile(file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        csvData = e.target.result;
+        document.getElementById('fileName').textContent = "✓ " + file.name;
+        document.getElementById('fileName').classList.add('show');
+        document.getElementById('processBtn').disabled = false;
+        updateProgress(1);
+        setFinStatus("ok", "File loaded: " + file.name);
+        toast("CSV file loaded successfully");
+      };
+      reader.onerror = function() {
+        toast("Error reading file");
+        setFinStatus("error", "Error reading file");
+      };
+      reader.readAsText(file);
+    }
+
+    // ============================================
+    // CSV PARSING
+    // ============================================
+    function parseCSV(text) {
+      var lines = text.trim().split(/\r?\n/);
+      if (lines.length < 2) return [];
+
+      // Parse header
+      var headers = parseCSVLine(lines[0]).map(function(h) {
+        return h.toLowerCase().trim();
+      });
+
+      // Find column indices
+      var dateIdx = findColumnIndex(headers, ['date', 'transaction date', 'trans date', 'posting date', 'value date']);
+      var descIdx = findColumnIndex(headers, ['description', 'desc', 'narrative', 'details', 'memo', 'transaction description', 'particulars']);
+      var amountIdx = findColumnIndex(headers, ['amount', 'value', 'sum', 'transaction amount']);
+      var debitIdx = findColumnIndex(headers, ['debit', 'withdrawal', 'out', 'dr']);
+      var creditIdx = findColumnIndex(headers, ['credit', 'deposit', 'in', 'cr']);
+      var accountIdx = findColumnIndex(headers, ['account', 'account name', 'bank', 'source']);
+      var currencyIdx = findColumnIndex(headers, ['currency', 'ccy', 'cur']);
+
+      var transactions = [];
+      for (var i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        
+        var cols = parseCSVLine(lines[i]);
+        
+        // Get date
+        var dateVal = dateIdx >= 0 ? cols[dateIdx] : '';
+        
+        // Get description
+        var descVal = descIdx >= 0 ? cols[descIdx] : '';
+        
+        // Get amount (handle debit/credit or single amount column)
+        var amountVal = 0;
+        if (amountIdx >= 0) {
+          amountVal = parseNumber(cols[amountIdx]);
+        } else if (debitIdx >= 0 || creditIdx >= 0) {
+          var debit = debitIdx >= 0 ? parseNumber(cols[debitIdx]) : 0;
+          var credit = creditIdx >= 0 ? parseNumber(cols[creditIdx]) : 0;
+          amountVal = credit - debit; // Credit positive, debit negative
+        }
+
+        // Get account name
+        var accountVal = accountIdx >= 0 ? cols[accountIdx] : 'Unknown';
+
+        // Get currency
+        var currencyVal = currencyIdx >= 0 ? cols[currencyIdx] : 'USD';
+
+        if (dateVal || descVal || amountVal !== 0) {
+          transactions.push({
+            txn_id: 'TXN_' + String(i).padStart(5, '0'),
+            account_name: accountVal || 'Unknown',
+            date: parseDate(dateVal),
+            description: descVal || '',
+            amount: amountVal,
+            currency: currencyVal || 'USD',
+            merchant_key: extractMerchant(descVal),
+            category_group: 'Unmapped',
+            category: 'Uncategorized',
+            method: 'rule',
+            confidence: 0
+          });
+        }
+      }
+
+      return transactions;
+    }
+
+    function parseCSVLine(line) {
+      var result = [];
+      var current = '';
+      var inQuotes = false;
+      
+      for (var i = 0; i < line.length; i++) {
+        var char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    function findColumnIndex(headers, possibleNames) {
+      for (var i = 0; i < possibleNames.length; i++) {
+        var idx = headers.indexOf(possibleNames[i]);
+        if (idx >= 0) return idx;
+      }
+      // Partial match
+      for (var i = 0; i < headers.length; i++) {
+        for (var j = 0; j < possibleNames.length; j++) {
+          if (headers[i].includes(possibleNames[j])) return i;
+        }
+      }
+      return -1;
+    }
+
+    function parseNumber(str) {
+      if (!str) return 0;
+      // Remove currency symbols, spaces, and handle parentheses for negatives
+      var cleaned = str.replace(/[$€£¥,\s]/g, '');
+      if (cleaned.match(/^\(.*\)$/)) {
+        cleaned = '-' + cleaned.replace(/[()]/g, '');
+      }
+      var num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function parseDate(str) {
+      if (!str) return null;
+      // Try various date formats
+      var date = new Date(str);
+      if (!isNaN(date.getTime())) return date;
+      
+      // Try DD/MM/YYYY
+      var parts = str.split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        // Try DD/MM/YYYY
+        date = new Date(parts[2], parts[1] - 1, parts[0]);
+        if (!isNaN(date.getTime())) return date;
+        // Try MM/DD/YYYY
+        date = new Date(parts[2], parts[0] - 1, parts[1]);
+        if (!isNaN(date.getTime())) return date;
+      }
+      return new Date();
+    }
+
+    function extractMerchant(description) {
+      if (!description) return '';
+      // Simple merchant extraction - take first few words, remove numbers
+      return description
+        .replace(/[0-9#*]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .slice(0, 3)
+        .join(' ')
+        .toUpperCase();
+    }
+
+    // ============================================
+    // CATEGORIZATION RULES
+    // ============================================
+    var categoryRules = [
+      // Revenue
+      { keywords: ['sales', 'revenue', 'income', 'payment received', 'invoice paid', 'stripe', 'paypal received'], group: 'Revenue', category: 'Sales Revenue' },
+      { keywords: ['interest income', 'interest earned'], group: 'Revenue', category: 'Interest Income' },
+      { keywords: ['refund received', 'rebate'], group: 'Revenue', category: 'Other Income' },
+      
+      // COGS
+      { keywords: ['inventory', 'stock purchase', 'raw material', 'supplies', 'manufacturing'], group: 'COGS', category: 'Inventory/Materials' },
+      { keywords: ['freight', 'shipping cost', 'logistics'], group: 'COGS', category: 'Freight & Shipping' },
+      
+      // Operating Expenses
+      { keywords: ['salary', 'payroll', 'wages', 'bonus', 'compensation'], group: 'Opex', category: 'Salaries & Wages' },
+      { keywords: ['rent', 'lease', 'office space'], group: 'Opex', category: 'Rent' },
+      { keywords: ['utility', 'electric', 'gas', 'water', 'internet', 'phone'], group: 'Opex', category: 'Utilities' },
+      { keywords: ['software', 'subscription', 'saas', 'cloud', 'aws', 'azure', 'google cloud', 'microsoft', 'adobe', 'slack', 'zoom'], group: 'Opex', category: 'Software & Subscriptions' },
+      { keywords: ['marketing', 'advertising', 'ads', 'facebook ads', 'google ads', 'promotion'], group: 'Opex', category: 'Marketing & Advertising' },
+      { keywords: ['travel', 'flight', 'hotel', 'uber', 'lyft', 'taxi', 'airbnb'], group: 'Opex', category: 'Travel & Entertainment' },
+      { keywords: ['meal', 'restaurant', 'food', 'lunch', 'dinner', 'coffee'], group: 'Opex', category: 'Meals & Entertainment' },
+      { keywords: ['insurance', 'premium'], group: 'Opex', category: 'Insurance' },
+      { keywords: ['legal', 'attorney', 'lawyer', 'law firm'], group: 'Opex', category: 'Legal & Professional' },
+      { keywords: ['accounting', 'bookkeeping', 'audit', 'cpa'], group: 'Opex', category: 'Accounting' },
+      { keywords: ['consulting', 'consultant', 'advisory'], group: 'Opex', category: 'Consulting' },
+      { keywords: ['office supplies', 'staples', 'office depot'], group: 'Opex', category: 'Office Supplies' },
+      { keywords: ['maintenance', 'repair', 'fix'], group: 'Opex', category: 'Maintenance & Repairs' },
+      { keywords: ['bank fee', 'service charge', 'wire fee', 'transaction fee'], group: 'Opex', category: 'Bank Fees' },
+      
+      // Taxes
+      { keywords: ['tax', 'irs', 'vat', 'gst', 'sales tax', 'income tax', 'payroll tax'], group: 'Taxes', category: 'Taxes' },
+      
+      // Financing
+      { keywords: ['loan', 'interest payment', 'mortgage', 'financing'], group: 'Financing', category: 'Loan Interest' },
+      { keywords: ['dividend', 'distribution'], group: 'Financing', category: 'Dividends' },
+      
+      // Transfers (to be excluded from P&L)
+      { keywords: ['transfer', 'internal transfer', 'move funds', 'from savings', 'to savings'], group: 'Transfers', category: 'Internal Transfer' },
+      { keywords: ['owner draw', 'owner contribution', 'capital'], group: 'Transfers', category: 'Owner Transactions' }
+    ];
+
+    function categorizeTransaction(txn) {
+      var descLower = txn.description.toLowerCase();
+      var merchantLower = txn.merchant_key.toLowerCase();
+      
+      for (var i = 0; i < categoryRules.length; i++) {
+        var rule = categoryRules[i];
+        for (var j = 0; j < rule.keywords.length; j++) {
+          if (descLower.includes(rule.keywords[j]) || merchantLower.includes(rule.keywords[j])) {
+            return {
+              category_group: rule.group,
+              category: rule.category,
+              method: 'rule',
+              confidence: 0.8
+            };
+          }
+        }
+      }
+      
+      // Default: Unmapped
+      return {
+        category_group: 'Unmapped',
+        category: 'Uncategorized',
+        method: 'rule',
+        confidence: 0
+      };
+    }
+
+    // ============================================
+    // PROCESS TRANSACTIONS
+    // ============================================
+    function processTransactions() {
+      if (!csvData) {
+        toast("Please upload a CSV file first");
+        return;
+      }
+
+      setFinStatus("processing", "Processing transactions...");
+      updateProgress(2);
+      toast("Processing transactions...");
+
+      // Parse CSV
+      parsedTransactions = parseCSV(csvData);
+      
+      if (parsedTransactions.length === 0) {
+        setFinStatus("error", "No transactions found in CSV");
+        toast("No transactions found");
+        return;
+      }
+
+      // Categorize each transaction
+      for (var i = 0; i < parsedTransactions.length; i++) {
+        var cat = categorizeTransaction(parsedTransactions[i]);
+        parsedTransactions[i].category_group = cat.category_group;
+        parsedTransactions[i].category = cat.category;
+        parsedTransactions[i].method = cat.method;
+        parsedTransactions[i].confidence = cat.confidence;
+        
+        // Add month (end of month)
+        if (parsedTransactions[i].date) {
+          var d = parsedTransactions[i].date;
+          parsedTransactions[i].month = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        }
+      }
+
+      // Write to Excel
+      writeToExcel();
+    }
+
+    // ============================================
+    // WRITE TO EXCEL
+    // ============================================
+    function writeToExcel() {
+      Excel.run(function(context) {
+        var sheets = context.workbook.worksheets;
+        sheets.load("items/name");
+
+        return context.sync().then(function() {
+          // Delete existing sheets if they exist
+          var sheetsToDelete = ['CLEANED_TXN', 'P&L'];
+          for (var i = 0; i < sheets.items.length; i++) {
+            if (sheetsToDelete.indexOf(sheets.items[i].name) >= 0) {
+              sheets.items[i].delete();
+            }
+          }
+          return context.sync();
+        }).then(function() {
+          // ========== CREATE CLEANED_TXN SHEET ==========
+          var txnSheet = sheets.add("CLEANED_TXN");
+          
+          // Headers for tbl_cleaned_txn
+          var headers = [
+            "txn_id", "account_name", "date", "description", "amount",
+            "currency", "merchant_key", "category_group", "category",
+            "method", "confidence", "month"
+          ];
+          
+          // Write headers
+          var headerRange = txnSheet.getRange("A1:L1");
+          headerRange.values = [headers];
+          headerRange.format.font.bold = true;
+          headerRange.format.fill.color = "#217346";
+          headerRange.format.font.color = "#FFFFFF";
+
+          // Write transaction data
+          var dataRows = [];
+          for (var i = 0; i < parsedTransactions.length; i++) {
+            var txn = parsedTransactions[i];
+            dataRows.push([
+              txn.txn_id,
+              txn.account_name,
+              txn.date ? excelDate(txn.date) : "",
+              txn.description,
+              txn.amount,
+              txn.currency,
+              txn.merchant_key,
+              txn.category_group,
+              txn.category,
+              txn.method,
+              txn.confidence,
+              txn.month ? excelDate(txn.month) : ""
+            ]);
+          }
+
+          if (dataRows.length > 0) {
+            var dataRange = txnSheet.getRange("A2:L" + (dataRows.length + 1));
+            dataRange.values = dataRows;
+            
+            // Format date columns
+            txnSheet.getRange("C2:C" + (dataRows.length + 1)).numberFormat = [["yyyy-mm-dd"]];
+            txnSheet.getRange("L2:L" + (dataRows.length + 1)).numberFormat = [["yyyy-mm"]];
+            
+            // Format amount column
+            txnSheet.getRange("E2:E" + (dataRows.length + 1)).numberFormat = [["#,##0.00"]];
+            
+            // Create table
+            var tableRange = txnSheet.getRange("A1:L" + (dataRows.length + 1));
+            var table = txnSheet.tables.add(tableRange, true);
+            table.name = "tbl_cleaned_txn";
+            
+            // Auto-fit columns
+            txnSheet.getRange("A:L").format.autofitColumns();
+          }
+
+          // ========== CREATE P&L SHEET ==========
+          var plSheet = sheets.add("P&L");
+          
+          // Get unique months
+          var months = [];
+          var monthSet = {};
+          for (var i = 0; i < parsedTransactions.length; i++) {
+            if (parsedTransactions[i].month) {
+              var monthKey = parsedTransactions[i].month.getFullYear() + "-" + 
+                            String(parsedTransactions[i].month.getMonth() + 1).padStart(2, '0');
+              if (!monthSet[monthKey]) {
+                monthSet[monthKey] = parsedTransactions[i].month;
+                months.push({ key: monthKey, date: parsedTransactions[i].month });
+              }
+            }
+          }
+          months.sort(function(a, b) { return a.key.localeCompare(b.key); });
+
+          // P&L Categories
+          var plCategories = [
+            { name: "Revenue", group: "Revenue", isTotal: false },
+            { name: "COGS", group: "COGS", isTotal: false },
+            { name: "Gross Profit", group: null, isTotal: true, formula: "Revenue-COGS" },
+            { name: "", group: null, isTotal: false },
+            { name: "Operating Expenses", group: "Opex", isTotal: false },
+            { name: "Operating Income", group: null, isTotal: true, formula: "GrossProfit-Opex" },
+            { name: "", group: null, isTotal: false },
+            { name: "Taxes", group: "Taxes", isTotal: false },
+            { name: "Financing", group: "Financing", isTotal: false },
+            { name: "Net Income", group: null, isTotal: true, formula: "OpIncome-Taxes-Financing" },
+            { name: "", group: null, isTotal: false },
+            { name: "Transfers (Excluded)", group: "Transfers", isTotal: false },
+            { name: "Unmapped", group: "Unmapped", isTotal: false }
+          ];
+
+          // Write P&L headers
+          plSheet.getRange("A1").values = [["P&L Summary"]];
+          plSheet.getRange("A1").format.font.bold = true;
+          plSheet.getRange("A1").format.font.size = 16;
+
+          // Category column header
+          plSheet.getRange("A3").values = [["Category"]];
+          plSheet.getRange("A3").format.font.bold = true;
+
+          // Month headers
+          for (var m = 0; m < months.length; m++) {
+            var colLetter = getColumnLetter(m + 1);
+            plSheet.getRange(colLetter + "3").values = [[months[m].key]];
+            plSheet.getRange(colLetter + "3").format.font.bold = true;
+            plSheet.getRange(colLetter + "3").format.horizontalAlignment = "Center";
+          }
+
+          // Write P&L rows
+          var rowNum = 4;
+          var rowRefs = {};
+          
+          for (var c = 0; c < plCategories.length; c++) {
+            var cat = plCategories[c];
+            
+            if (cat.name === "") {
+              rowNum++;
+              continue;
+            }
+
+            plSheet.getRange("A" + rowNum).values = [[cat.name]];
+            
+            if (cat.isTotal) {
+              plSheet.getRange("A" + rowNum).format.font.bold = true;
+              plSheet.getRange("A" + rowNum + ":" + getColumnLetter(months.length) + rowNum).format.fill.color = "#FFF2CC";
+            }
+
+            // Write SUMIF formulas for each month
+            for (var m = 0; m < months.length; m++) {
+              var colLetter = getColumnLetter(m + 1);
+              var monthVal = months[m].key;
+              
+              if (cat.group) {
+                // SUMIFS formula referencing tbl_cleaned_txn
+                var formula = '=SUMIFS(tbl_cleaned_txn[amount],tbl_cleaned_txn[category_group],"' + cat.group + '",tbl_cleaned_txn[month],"' + monthVal + '*")';
+                plSheet.getRange(colLetter + rowNum).formulas = [[formula]];
+              } else if (cat.isTotal) {
+                // Calculate totals based on above rows
+                if (cat.name === "Gross Profit") {
+                  var formula = "=" + colLetter + rowRefs["Revenue"] + "-" + colLetter + rowRefs["COGS"];
+                  plSheet.getRange(colLetter + rowNum).formulas = [[formula]];
+                } else if (cat.name === "Operating Income") {
+                  var formula = "=" + colLetter + rowRefs["Gross Profit"] + "-" + colLetter + rowRefs["Operating Expenses"];
+                  plSheet.getRange(colLetter + rowNum).formulas = [[formula]];
+                } else if (cat.name === "Net Income") {
+                  var formula = "=" + colLetter + rowRefs["Operating Income"] + "-" + colLetter + rowRefs["Taxes"] + "-" + colLetter + rowRefs["Financing"];
+                  plSheet.getRange(colLetter + rowNum).formulas = [[formula]];
+                }
+              }
+              
+              plSheet.getRange(colLetter + rowNum).numberFormat = [["#,##0.00"]];
+            }
+
+            rowRefs[cat.name] = rowNum;
+            rowNum++;
+          }
+
+          // Format
+          plSheet.getRange("A:A").format.columnWidth = 150;
+          for (var m = 0; m < months.length; m++) {
+            var colLetter = getColumnLetter(m + 1);
+            plSheet.getRange(colLetter + ":" + colLetter).format.columnWidth = 100;
+          }
+
+          // Activate CLEANED_TXN sheet
+          txnSheet.activate();
+
+          return context.sync();
+        }).then(function() {
+          updateProgress(3);
+          setFinStatus("ok", "Created CLEANED_TXN and P&L sheets!");
+          toast("Analysis complete!");
+        });
+      }).catch(function(error) {
+        setFinStatus("error", "Error: " + error.message);
+        toast("Error creating sheets");
+        console.error(error);
+      });
+    }
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    function excelDate(date) {
+      // Convert JS Date to Excel serial number
+      var epoch = new Date(1899, 11, 30);
+      var msPerDay = 24 * 60 * 60 * 1000;
+      return Math.floor((date - epoch) / msPerDay);
+    }
+
+    function getColumnLetter(index) {
+      var letter = "";
+      index = index + 1;
+      while (index > 0) {
+        var remainder = (index - 1) % 26;
+        letter = String.fromCharCode(65 + remainder) + letter;
+        index = Math.floor((index - 1) / 26);
+      }
+      return letter;
+    }
+
+    // ============================================
+    // CAPEX MODULE FUNCTIONS (unchanged)
+    // ============================================
+    function createCapexTemplate() {
+      setCapexStatus("", "Creating template…");
       toast("Creating template…");
 
       Excel.run(function(context) {
@@ -651,13 +965,11 @@
           var lastCol = getColumnLetter(7 + numPeriods - 1);
           var lastAssetRow = 50;
           
-          // ROW 1: Title
           sheet.getRange("A1").values = [["Capex and D&A Calculator"]];
           sheet.getRange("A1").format.font.bold = true;
           sheet.getRange("A1").format.font.size = 16;
           sheet.getRange("A1").format.font.color = "#217346";
           
-          // ROW 3: Start date row
           sheet.getRange("G3").values = [["Start date"]];
           sheet.getRange("G3").format.font.bold = true;
           sheet.getRange("H3").values = [[startDateInput]];
@@ -670,7 +982,6 @@
             sheet.getRange(col + "3").numberFormat = [["yyyy-mm-dd"]];
           }
           
-          // ROW 4: End date row
           sheet.getRange("G4").values = [["End date"]];
           sheet.getRange("G4").format.font.bold = true;
           for (var i = 0; i < numPeriods; i++) {
@@ -679,16 +990,13 @@
             sheet.getRange(col + "4").numberFormat = [["yyyy-mm-dd"]];
           }
           
-          // ROW 5: Period numbers
           sheet.getRange("G5").values = [["Period"]];
           sheet.getRange("G5").format.font.bold = true;
           for (var i = 0; i < numPeriods; i++) {
             var col = getColumnLetter(7 + i);
             sheet.getRange(col + "5").values = [[i + 1]];
-            sheet.getRange(col + "5").format.horizontalAlignment = "Center";
           }
           
-          // ROW 6: Total D&A
           sheet.getRange("A6").values = [["Total D&A"]];
           sheet.getRange("A6").format.font.bold = true;
           sheet.getRange("A6:G6").format.fill.color = "#FFF2CC";
@@ -701,7 +1009,6 @@
             sheet.getRange(col + "6").format.fill.color = "#FFF2CC";
           }
           
-          // ROW 7: Capex Total
           sheet.getRange("A7").values = [["Capex Total"]];
           sheet.getRange("A7").format.font.bold = true;
           sheet.getRange("A7:G7").format.fill.color = "#DDEBF7";
@@ -714,7 +1021,6 @@
             sheet.getRange(col + "7").format.fill.color = "#DDEBF7";
           }
           
-          // ROW 8: Column Headers
           var headers = sheet.getRange("A8:G8");
           headers.values = [["Assets", "Date", "End period", "Period", "Cost", "Useful Life", "Salvage"]];
           headers.format.font.bold = true;
@@ -726,10 +1032,8 @@
             sheet.getRange(col + "8").format.fill.color = "#217346";
           }
           
-          // ROWS 9-50: Asset rows with formulas
           for (var row = 9; row <= lastAssetRow; row++) {
             sheet.getRange("C" + row).formulas = [['=IF(B' + row + '="","-",EOMONTH(B' + row + ',0))']];
-            sheet.getRange("C" + row).numberFormat = [["yyyy-mm-dd"]];
             sheet.getRange("D" + row).formulas = [['=IF(C' + row + '="-",0,MATCH(C' + row + ',$H$4:$' + lastCol + '$4,0))']];
             
             for (var p = 0; p < numPeriods; p++) {
@@ -740,51 +1044,30 @@
             }
           }
           
-          // Formatting
-          sheet.getRange("B9:B" + lastAssetRow).numberFormat = [["yyyy-mm-dd"]];
-          sheet.getRange("E9:E" + lastAssetRow).numberFormat = [["#,##0.00"]];
-          sheet.getRange("G9:G" + lastAssetRow).numberFormat = [["#,##0.00"]];
           sheet.getRange("A:G").format.autofitColumns();
-          
-          for (var p = 0; p < numPeriods; p++) {
-            var col = getColumnLetter(7 + p);
-            sheet.getRange(col + "1").format.columnWidth = 75;
-          }
-          
-          sheet.freezePanes.freezeRows(8);
-          sheet.freezePanes.freezeColumns(7);
-          
-          for (var row = 10; row <= lastAssetRow; row += 2) {
-            sheet.getRange("A" + row + ":" + lastCol + row).format.fill.color = "#F9F9F9";
-          }
-          
           sheet.activate();
           return context.sync();
         }).then(function() {
-          setStatus("ok", "Template created with " + numPeriods + " periods!");
+          setCapexStatus("ok", "Template created!");
           toast("Template created!");
         });
       }).catch(function(error) {
-        setStatus("error", "Error: " + error.message);
+        setCapexStatus("error", "Error: " + error.message);
         toast("Error creating template");
-        console.error(error);
       });
     }
 
-    // ============================================
-    // CAPEX MODULE - ADD ASSET
-    // ============================================
     function addAsset() {
       var assetName = document.getElementById("assetName").value;
       var assetCost = document.getElementById("assetCost").value;
 
       if (!assetName || !assetCost) {
-        setStatus("warn", "Please fill in asset name and cost");
+        setCapexStatus("warn", "Please fill in asset name and cost");
         toast("Missing required fields");
         return;
       }
 
-      setStatus("", "Adding asset…");
+      setCapexStatus("", "Adding asset…");
       toast("Adding asset…");
 
       Excel.run(function(context) {
@@ -806,46 +1089,27 @@
           }
           
           if (targetRow === -1) {
-            setStatus("warn", "No empty rows available");
-            toast("Template is full");
+            setCapexStatus("warn", "No empty rows available");
             return context.sync();
           }
           
           sheet.getRange("A" + targetRow).values = [[assetName]];
           sheet.getRange("B" + targetRow).values = [[assetDate]];
-          sheet.getRange("B" + targetRow).numberFormat = [["yyyy-mm-dd"]];
           sheet.getRange("E" + targetRow).values = [[parseFloat(assetCost)]];
-          sheet.getRange("E" + targetRow).numberFormat = [["#,##0.00"]];
           sheet.getRange("F" + targetRow).values = [[parseInt(usefulLife)]];
           sheet.getRange("G" + targetRow).values = [[parseFloat(salvageValue)]];
-          sheet.getRange("G" + targetRow).numberFormat = [["#,##0.00"]];
           
           return context.sync();
         }).then(function() {
           document.getElementById("assetName").value = "";
           document.getElementById("assetCost").value = "";
-          setStatus("ok", "Asset '" + assetName + "' added!");
+          setCapexStatus("ok", "Asset added!");
           toast("Asset added!");
         });
       }).catch(function(error) {
-        setStatus("error", "Error: " + error.message);
+        setCapexStatus("error", "Error: " + error.message);
         toast("Error adding asset");
-        console.error(error);
       });
-    }
-
-    // ============================================
-    // HELPER FUNCTION
-    // ============================================
-    function getColumnLetter(index) {
-      var letter = "";
-      index = index + 1;
-      while (index > 0) {
-        var remainder = (index - 1) % 26;
-        letter = String.fromCharCode(65 + remainder) + letter;
-        index = Math.floor((index - 1) / 26);
-      }
-      return letter;
     }
   </script>
 </body>
