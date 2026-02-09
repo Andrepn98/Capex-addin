@@ -56,5 +56,10 @@ Office.onReady(function(info) {
     if (typeof initFinancialModule === 'function') {
       initFinancialModule();
     }
+    
+    // Initialize Audit Module
+    if (typeof initAuditModule === 'function') {
+      initAuditModule();
+    }
   }
 });

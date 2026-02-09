@@ -64,6 +64,26 @@
                 </div>
               </div>
 
+              <!-- Financial Audit Module -->
+              <div class="module-card" onclick="showPage('page-audit')">
+                <div class="module-icon audit">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                </div>
+                <div class="module-info">
+                  <p class="module-title">Financial Audit</p>
+                  <p class="module-desc">Audit formulas, detect errors, hardcodes, and pattern breaks</p>
+                </div>
+                <div class="module-arrow">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+              </div>
+
               <!-- Break-Even (Coming Soon) -->
               <div class="module-card disabled">
                 <div class="module-icon coming-soon">
@@ -217,6 +237,109 @@
         </div>
       </div>
 
+      <!-- ==================== FINANCIAL AUDIT MODULE PAGE ==================== -->
+      <div id="page-audit" class="page">
+        <div class="header header-with-back">
+          <button class="back-btn" onclick="showPage('page-home')" title="Back to Home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <div class="brand-icon brand-icon-sm" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="hgroup">
+            <p class="title title-sm">Financial Audit</p>
+            <p class="subtitle">by ORNA</p>
+          </div>
+        </div>
+
+        <div class="content">
+          <!-- Audit Actions -->
+          <div class="section">
+            <p class="kicker">Run Audit</p>
+            
+            <div class="grid">
+              <button id="runFullAudit" class="btn btn-primary" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Full Audit
+              </button>
+              
+              <button id="runQuickAudit" class="btn btn-secondary" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Quick Audit
+              </button>
+              
+              <button id="auditSelection" class="btn btn-secondary" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <rect x="7" y="7" width="10" height="10" rx="1" ry="1"></rect>
+                </svg>
+                Audit Selection
+              </button>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="progress-container" style="margin-top: 12px;">
+              <div class="progress-bar">
+                <div class="progress-fill" id="auditProgress" style="width: 0%;"></div>
+              </div>
+              <p class="progress-text" id="auditProgressText">Ready</p>
+            </div>
+          </div>
+
+          <!-- What it checks -->
+          <div class="section">
+            <p class="kicker">What We Check</p>
+            
+            <div class="audit-checks">
+              <div class="check-item">
+                <span class="check-icon critical">!</span>
+                <span class="check-label">Errors (#REF!, #DIV/0!, etc.)</span>
+              </div>
+              <div class="check-item">
+                <span class="check-icon warning">H</span>
+                <span class="check-label">Hardcoded values in formula areas</span>
+              </div>
+              <div class="check-item">
+                <span class="check-icon warning">X</span>
+                <span class="check-label">Formula pattern breaks</span>
+              </div>
+              <div class="check-item">
+                <span class="check-icon warning">S</span>
+                <span class="check-label">Shifted column references</span>
+              </div>
+              <div class="check-item">
+                <span class="check-icon warning">V</span>
+                <span class="check-label">Volatile functions (NOW, INDIRECT)</span>
+              </div>
+              <div class="check-item">
+                <span class="check-icon info">C</span>
+                <span class="check-label">Complex formulas (high nesting)</span>
+              </div>
+              <div class="check-item">
+                <span class="check-icon info">N</span>
+                <span class="check-label">Invalid/unused named ranges</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Summary -->
+          <div class="section" id="auditSummary" style="display: none;">
+            <!-- Populated by JavaScript -->
+          </div>
+
+          <!-- Status -->
+          <div class="status">
+            <span id="auditStatusDot" class="dot"></span>
+            <span id="auditStatusText">Ready to audit</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -227,5 +350,6 @@
   <!-- Module Scripts -->
   <script src="module-capex.js"></script>
   <script src="module-financial.js"></script>
+  <script src="module-audit.js"></script>
 </body>
 </html>
