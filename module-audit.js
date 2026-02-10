@@ -1,23 +1,22 @@
 // ============================================
-// ORNA MODULE: Financial Model Audit Tool v2.0
+// ORNA MODULE: Financial Model Audit Tool v5
 // ============================================
-// Based on VBA modModelAudit v2.0
+// Based on VBA modModelAudit v5
 //
-// FEATURES:
-//   - Auto-detects period row (1,2,3... or sequential dates)
-//   - Detects total/summary columns (not flagged as breaks)
-//   - Uses row-dominant formula pattern (most common R1C1)
-//   - Skips blank rows
-//   - Pulls source row labels into the map
-//   - Color-coded visual audit map
+// IMPROVEMENTS:
+//   - Only audits rows that have labels in columns A-D
+//   - X breaks show: expected pattern vs actual formula
+//   - Uses conditional formatting (fast, no Union)
+//   - Selective sheet audit option
+//   - Issues capped at 2000
+//   - Progress feedback
 //
 // MAP LEGEND:
-//   .  = Consistent formula (matches row dominant pattern)
-//   H  = Hardcoded constant in formula/period zone
+//   .  = OK (matches row dominant pattern)
+//   H  = Hardcoded constant in formula zone
 //   X  = Pattern break (formula differs from dominant)
-//   E  = Cell contains Excel error (#REF! #DIV/0! etc.)
-//   S  = Summary/total column (expected break, not an issue)
-//   ~  = Label zone cell (before period start column)
+//   E  = Excel error (#REF! #DIV/0! etc.)
+//   S  = Summary/total column
 // ============================================
 
 // ============================================
@@ -26,41 +25,44 @@
 var auditConfig = {
     audPrefix: "AUD_",
     dashboardName: "AUDIT_DASHBOARD",
-    periodScanRows: 15,      // Rows scanned for period detection
-    labelCols: 4,            // Columns A-D scanned for row labels
-    minFormulasForDominant: 3, // Need >= this many formulas to define "dominant"
-    maxSheetNameLength: 31
+    periodScanRows: 15,
+    labelCols: 4,
+    minFormulasForDominant: 3,
+    maxSheetNameLength: 31,
+    maxIssues: 2000
 };
 
 // Colors (hex)
 var auditColors = {
-    clean: "#DAF2DA",        // Light green
-    hardcode: "#FFC000",     // Orange
-    break: "#FF8080",        // Soft red
-    error: "#FF0000",        // Red
-    summary: "#FFF2CC",      // Pale gold
-    label: "#F2F2F2",        // Light gray
-    headerBg: "#44546A",     // Dark blue
-    white: "#FFFFFF"
+    clean: "#DAF2DA",
+    hardcode: "#FFC000",
+    break: "#FF8080",
+    error: "#FF0000",
+    summary: "#FFF2CC",
+    headerBg: "#44546A",
+    white: "#FFFFFF",
+    lightGray: "#F2F2F2"
 };
 
 // ============================================
 // GLOBAL STATE
 // ============================================
 var auditState = {
-    results: [],             // SheetResult objects
-    totalIssues: 0,
-    totalHardcodes: 0,
-    totalBreaks: 0,
-    totalErrors: 0
+    results: [],
+    issues: [],
+    totalH: 0,
+    totalX: 0,
+    totalE: 0,
+    sheetsToAudit: [],
+    allSheetNames: []
 };
 
 // ============================================
 // INITIALIZE MODULE
 // ============================================
 function initAuditModule() {
-    document.getElementById('runFullAudit').onclick = runModelAudit;
-    document.getElementById('runQuickAudit').onclick = runQuickAudit;
+    document.getElementById('runFullAudit').onclick = runFullAudit;
+    document.getElementById('runQuickAudit').onclick = runSelectiveAudit;
     document.getElementById('auditSelection').onclick = auditSelectedRange;
     setAuditStatus("ok", "Ready to audit");
 }
@@ -80,91 +82,34 @@ function updateAuditProgress(percent, message) {
 }
 
 // ============================================
-// MAIN ENTRY POINT
+// FULL AUDIT - All Sheets
 // ============================================
-function runModelAudit() {
-    setAuditStatus("processing", "Running model audit...");
+function runFullAudit() {
+    setAuditStatus("processing", "Running full audit...");
     updateAuditProgress(0, "Initializing...");
-    toast("Starting model audit...");
+    toast("Starting full audit - all sheets...");
 
-    // Reset state
-    auditState = {
-        results: [],
-        totalIssues: 0,
-        totalHardcodes: 0,
-        totalBreaks: 0,
-        totalErrors: 0
-    };
+    resetAuditState();
 
     Excel.run(function(context) {
-        var workbook = context.workbook;
-        var sheets = workbook.worksheets;
+        var sheets = context.workbook.worksheets;
         sheets.load("items/name");
 
         return context.sync().then(function() {
-            updateAuditProgress(5, "Analyzing workbook structure...");
-
-            // Filter sheets to audit
-            var sheetsToAudit = sheets.items.filter(function(sheet) {
-                return !isAuditSheet(sheet.name);
+            // Get all non-audit sheets
+            var sheetsToAudit = sheets.items.filter(function(s) {
+                return !isAuditSheet(s.name);
             });
 
             if (sheetsToAudit.length === 0) {
                 throw new Error("No sheets to audit.");
             }
 
-            // Purge old audit sheets
-            return purgeOldAuditSheets(context, sheets.items);
-        }).then(function() {
-            updateAuditProgress(10, "Auditing sheets...");
-
-            // Re-load sheets after purge
-            var sheets = context.workbook.worksheets;
-            sheets.load("items/name");
-            return context.sync().then(function() {
-                return sheets.items;
-            });
-        }).then(function(allSheets) {
-            var sheetsToAudit = allSheets.filter(function(sheet) {
-                return !isAuditSheet(sheet.name);
-            });
-
-            // Audit each sheet sequentially
-            var progressPerSheet = 70 / Math.max(sheetsToAudit.length, 1);
-            var auditPromise = Promise.resolve();
-
-            sheetsToAudit.forEach(function(sheet, index) {
-                auditPromise = auditPromise.then(function() {
-                    updateAuditProgress(10 + (index * progressPerSheet), "Auditing: " + sheet.name);
-                    return auditOneSheet(context, sheet);
-                }).then(function(result) {
-                    if (result) {
-                        auditState.results.push(result);
-                        auditState.totalHardcodes += result.nHardcode;
-                        auditState.totalBreaks += result.nBreak;
-                        auditState.totalErrors += result.nError;
-                        auditState.totalIssues += result.nIssues;
-                    }
-                });
-            });
-
-            return auditPromise;
-        }).then(function() {
-            updateAuditProgress(85, "Building dashboard...");
-            return buildDashboard(context);
-        }).then(function() {
-            updateAuditProgress(100, "Complete!");
-
-            // Activate dashboard
-            var dashboard = context.workbook.worksheets.getItem(auditConfig.dashboardName);
-            dashboard.activate();
-
-            return context.sync();
+            auditState.sheetsToAudit = sheetsToAudit.map(function(s) { return s.name; });
+            return runAuditCore(context);
         });
     }).then(function() {
-        setAuditStatus("ok", "Audit complete! " + auditState.totalIssues + " issues found");
-        toast("Audit complete! See " + auditConfig.dashboardName);
-        displayAuditSummary();
+        showAuditComplete();
     }).catch(function(error) {
         setAuditStatus("error", "Error: " + error.message);
         toast("Audit failed: " + error.message);
@@ -173,50 +118,96 @@ function runModelAudit() {
 }
 
 // ============================================
-// QUICK AUDIT (Errors only)
+// SELECTIVE AUDIT - Pick Sheets
 // ============================================
-function runQuickAudit() {
-    setAuditStatus("processing", "Running quick audit...");
-    updateAuditProgress(0, "Scanning for errors...");
-    toast("Quick audit - checking for errors only...");
-
-    auditState = {
-        results: [],
-        totalIssues: 0,
-        totalHardcodes: 0,
-        totalBreaks: 0,
-        totalErrors: 0
-    };
+function runSelectiveAudit() {
+    setAuditStatus("processing", "Loading sheet list...");
 
     Excel.run(function(context) {
         var sheets = context.workbook.worksheets;
         sheets.load("items/name");
 
         return context.sync().then(function() {
-            var sheetsToAudit = sheets.items.filter(function(s) {
+            var eligibleSheets = sheets.items.filter(function(s) {
                 return !isAuditSheet(s.name);
             });
 
-            var promises = sheetsToAudit.map(function(sheet, index) {
-                return quickAuditSheet(context, sheet).then(function(result) {
-                    if (result) {
-                        auditState.results.push(result);
-                        auditState.totalErrors += result.nError;
-                        auditState.totalIssues += result.nError;
-                    }
-                    updateAuditProgress((index + 1) / sheetsToAudit.length * 90, "Checked: " + sheet.name);
-                });
-            });
+            if (eligibleSheets.length === 0) {
+                throw new Error("No sheets to audit.");
+            }
 
-            return Promise.all(promises);
-        }).then(function() {
-            updateAuditProgress(100, "Done!");
-            return context.sync();
+            auditState.allSheetNames = eligibleSheets.map(function(s) { return s.name; });
+            
+            // Show sheet picker UI
+            showSheetPicker(auditState.allSheetNames);
         });
+    }).catch(function(error) {
+        setAuditStatus("error", "Error: " + error.message);
+        console.error(error);
+    });
+}
+
+function showSheetPicker(sheetNames) {
+    var summaryDiv = document.getElementById('auditSummary');
+    if (!summaryDiv) return;
+
+    var html = '<div class="sheet-picker">';
+    html += '<p class="kicker">Select Sheets to Audit</p>';
+    html += '<div class="sheet-picker-list">';
+    
+    sheetNames.forEach(function(name, index) {
+        html += '<label class="sheet-checkbox">';
+        html += '<input type="checkbox" id="sheet_' + index + '" checked>';
+        html += '<span>' + escapeHtml(name) + '</span>';
+        html += '</label>';
+    });
+    
+    html += '</div>';
+    html += '<div class="sheet-picker-actions">';
+    html += '<button class="btn btn-sm" onclick="selectAllSheets(true)">Select All</button>';
+    html += '<button class="btn btn-sm" onclick="selectAllSheets(false)">Deselect All</button>';
+    html += '</div>';
+    html += '<button class="btn btn-primary" onclick="runSelectedSheetsAudit()" style="width:100%;margin-top:12px;">Run Audit</button>';
+    html += '</div>';
+
+    summaryDiv.innerHTML = html;
+    summaryDiv.style.display = 'block';
+    setAuditStatus("ok", "Select sheets and click Run Audit");
+}
+
+function selectAllSheets(checked) {
+    auditState.allSheetNames.forEach(function(name, index) {
+        var cb = document.getElementById('sheet_' + index);
+        if (cb) cb.checked = checked;
+    });
+}
+
+function runSelectedSheetsAudit() {
+    var selectedSheets = [];
+    
+    auditState.allSheetNames.forEach(function(name, index) {
+        var cb = document.getElementById('sheet_' + index);
+        if (cb && cb.checked) {
+            selectedSheets.push(name);
+        }
+    });
+
+    if (selectedSheets.length === 0) {
+        toast("Please select at least one sheet");
+        return;
+    }
+
+    resetAuditState();
+    auditState.sheetsToAudit = selectedSheets;
+
+    setAuditStatus("processing", "Running selective audit...");
+    updateAuditProgress(0, "Initializing...");
+    toast("Auditing " + selectedSheets.length + " sheet(s)...");
+
+    Excel.run(function(context) {
+        return runAuditCore(context);
     }).then(function() {
-        setAuditStatus("ok", "Quick audit done! " + auditState.totalErrors + " errors found");
-        toast("Quick audit complete!");
-        displayAuditSummary();
+        showAuditComplete();
     }).catch(function(error) {
         setAuditStatus("error", "Error: " + error.message);
         console.error(error);
@@ -240,7 +231,6 @@ function auditSelectedRange() {
             var formulas = range.formulas;
             var formulasR1C1 = range.formulasR1C1;
 
-            // Build dominant pattern per row
             for (var r = 0; r < values.length; r++) {
                 var dominant = getDominantPattern(formulasR1C1, r, 0, values[r].length - 1, {});
 
@@ -256,7 +246,8 @@ function auditSelectedRange() {
                             type: mark,
                             sheet: sheetName,
                             cell: cellAddr,
-                            detail: mark === "H" ? String(value) : formula
+                            actual: mark === "H" ? String(value) : formula,
+                            expected: mark === "X" ? ("Dominant: " + dominant) : (mark === "H" ? "(row expects formula)" : formula)
                         });
                     }
                 }
@@ -271,17 +262,10 @@ function auditSelectedRange() {
             toast("No issues found in selection!");
         } else {
             toast(issues.length + " issues found");
-            
-            // Update summary display
-            auditState.results = [{
-                sheetName: "Selection",
-                nHardcode: issues.filter(function(i) { return i.type === "H"; }).length,
-                nBreak: issues.filter(function(i) { return i.type === "X"; }).length,
-                nError: issues.filter(function(i) { return i.type === "E"; }).length,
-                nIssues: issues.length,
-                issues: issues
-            }];
-            auditState.totalIssues = issues.length;
+            auditState.issues = issues;
+            auditState.totalH = issues.filter(function(i) { return i.type === "H"; }).length;
+            auditState.totalX = issues.filter(function(i) { return i.type === "X"; }).length;
+            auditState.totalE = issues.filter(function(i) { return i.type === "E"; }).length;
             displayAuditSummary();
         }
     }).catch(function(error) {
@@ -291,7 +275,75 @@ function auditSelectedRange() {
 }
 
 // ============================================
-// AUDIT ONE SHEET (Full Analysis)
+// CORE AUDIT ENGINE
+// ============================================
+function runAuditCore(context) {
+    return new Promise(function(resolve, reject) {
+        var sheets = context.workbook.worksheets;
+        sheets.load("items/name");
+
+        context.sync().then(function() {
+            // Purge old audit sheets
+            return purgeOldAuditSheets(context, sheets.items);
+        }).then(function() {
+            // Re-load sheets
+            sheets.load("items/name");
+            return context.sync();
+        }).then(function() {
+            // Audit each selected sheet sequentially
+            var sheetIndex = 0;
+            var totalSheets = auditState.sheetsToAudit.length;
+
+            function auditNextSheet() {
+                if (sheetIndex >= totalSheets) {
+                    // All sheets audited, build dashboard
+                    updateAuditProgress(85, "Building dashboard...");
+                    return buildDashboard(context).then(function() {
+                        updateAuditProgress(100, "Complete!");
+                        
+                        // Activate dashboard
+                        var dashboard = context.workbook.worksheets.getItem(auditConfig.dashboardName);
+                        dashboard.activate();
+                        
+                        return context.sync();
+                    });
+                }
+
+                var sheetName = auditState.sheetsToAudit[sheetIndex];
+                var progress = 10 + (sheetIndex / totalSheets * 70);
+                updateAuditProgress(progress, "Auditing: " + sheetName + " (" + (sheetIndex + 1) + "/" + totalSheets + ")");
+
+                var sheet = null;
+                try {
+                    sheet = context.workbook.worksheets.getItem(sheetName);
+                } catch (e) {
+                    sheetIndex++;
+                    return auditNextSheet();
+                }
+
+                return auditOneSheet(context, sheet).then(function(result) {
+                    if (result) {
+                        auditState.results.push(result);
+                        auditState.totalH += result.nH;
+                        auditState.totalX += result.nX;
+                        auditState.totalE += result.nE;
+                    }
+                    sheetIndex++;
+                    return auditNextSheet();
+                }).catch(function(err) {
+                    console.error("Error auditing " + sheetName + ": " + err.message);
+                    sheetIndex++;
+                    return auditNextSheet();
+                });
+            }
+
+            return auditNextSheet();
+        }).then(resolve).catch(reject);
+    });
+}
+
+// ============================================
+// AUDIT ONE SHEET (Only Labeled Rows)
 // ============================================
 function auditOneSheet(context, sheet) {
     return new Promise(function(resolve, reject) {
@@ -300,18 +352,15 @@ function auditOneSheet(context, sheet) {
             auditName: safeAuditName(sheet.name),
             periodRow: 0,
             periodCol: 0,
-            lastDataRow: 0,
-            lastDataCol: 0,
-            nHardcode: 0,
-            nBreak: 0,
-            nError: 0,
-            nIssues: 0,
-            issues: [],
+            nH: 0,
+            nX: 0,
+            nE: 0,
+            labeledRows: [],
             totalCols: {}
         };
 
         var usedRange = sheet.getUsedRange();
-        usedRange.load("values, formulas, formulasR1C1, rowCount, columnCount, address");
+        usedRange.load("values, formulas, formulasR1C1, rowCount, columnCount");
 
         context.sync().then(function() {
             var values = usedRange.values;
@@ -320,79 +369,112 @@ function auditOneSheet(context, sheet) {
             var nRows = usedRange.rowCount;
             var nCols = usedRange.columnCount;
 
-            result.lastDataRow = nRows;
-            result.lastDataCol = nCols;
-
-            // Detect period row and column
+            // Detect period
             var periodInfo = detectPeriod(values, nRows, nCols);
             result.periodRow = periodInfo.row;
             result.periodCol = periodInfo.col;
 
-            var inspectFrom = result.periodCol > 0 ? result.periodCol - 1 : 0; // 0-based
+            var pCol = result.periodCol > 0 ? result.periodCol - 1 : auditConfig.labelCols; // 0-based
 
-            // Detect total/summary columns
-            if (result.periodRow > 0 && result.periodCol > 0) {
-                result.totalCols = detectTotalColumns(values, result.periodRow - 1, inspectFrom, nCols);
+            // Detect total columns
+            if (result.periodRow > 0) {
+                result.totalCols = detectTotalColumns(values, result.periodRow - 1, pCol, nCols);
             }
 
-            // Prepare audit map data
-            var mapData = [];
-            var mapHeaders = ["Row", "Label", "Chk"];
-            
-            // Add column headers for the grid
-            for (var gc = inspectFrom; gc < nCols; gc++) {
-                mapHeaders.push(numberToColumnLetter(gc + 1));
-            }
-            mapData.push(mapHeaders);
-
-            // Main audit loop - row by row
+            // Find labeled rows with data
+            var labeledRows = [];
             for (var r = 0; r < nRows; r++) {
-                // Skip blank rows
-                if (isRowBlank(values, r, inspectFrom, nCols)) continue;
+                var label = getRowLabel(values, r);
+                if (label.length === 0) continue;
 
-                // Get row label
-                var rowLabel = getRowLabel(values, r);
+                // Check if row has any data in the audit zone
+                var hasData = false;
+                for (var c = pCol; c < nCols; c++) {
+                    if (values[r][c] !== null && values[r][c] !== "" && values[r][c] !== undefined) {
+                        hasData = true;
+                        break;
+                    }
+                    var f = formulas[r][c];
+                    if (typeof f === "string" && f.length > 0 && f.charAt(0) === "=") {
+                        hasData = true;
+                        break;
+                    }
+                }
 
-                // Get dominant pattern for this row
-                var dominant = getDominantPattern(formulasR1C1, r, inspectFrom, nCols - 1, result.totalCols);
+                if (hasData) {
+                    labeledRows.push({
+                        rowIndex: r,
+                        rowNum: r + 1,
+                        label: label
+                    });
+                }
+            }
 
+            result.labeledRows = labeledRows;
+
+            if (labeledRows.length === 0) {
+                resolve(result);
+                return;
+            }
+
+            // Audit only labeled rows
+            var mapData = [];
+            var gridCols = nCols - pCol;
+            
+            // Header row
+            var headerRow = ["Row", "Label", "#"];
+            for (var gc = 0; gc < gridCols; gc++) {
+                headerRow.push(numberToColumnLetter(pCol + gc + 1));
+            }
+            mapData.push(headerRow);
+
+            // Audit each labeled row
+            for (var li = 0; li < labeledRows.length; li++) {
+                var lr = labeledRows[li];
+                var r = lr.rowIndex;
+                var dominant = getDominantPattern(formulasR1C1, r, pCol, nCols - 1, result.totalCols);
+                
                 var rowIssues = 0;
-                var rowMarks = [r + 1, rowLabel, ""]; // Row number, label, check mark (filled later)
+                var rowMarks = [lr.rowNum, lr.label, ""];
 
-                for (var c = inspectFrom; c < nCols; c++) {
+                for (var c = pCol; c < nCols; c++) {
                     var value = values[r][c];
                     var formula = formulas[r][c];
                     var formulaR1C1 = formulasR1C1[r][c];
                     var isTotalCol = result.totalCols[c] === true;
-                    
+
                     var mark = classifyCell(value, formula, formulaR1C1, dominant, isTotalCol);
                     rowMarks.push(mark);
 
-                    // Collect issues
-                    if (mark === "H") {
-                        result.nHardcode++;
+                    // Collect issues (with expected vs actual)
+                    if (mark === "H" || mark === "X" || mark === "E") {
                         rowIssues++;
-                        result.issues.push({
-                            type: "H",
-                            cell: numberToColumnLetter(c + 1) + (r + 1),
-                            detail: truncateValue(value)
-                        });
-                    } else if (mark === "X") {
-                        result.nBreak++;
-                        rowIssues++;
-                        result.issues.push({
-                            type: "X",
-                            cell: numberToColumnLetter(c + 1) + (r + 1),
-                            detail: truncateFormula(formula)
-                        });
-                    } else if (mark === "E") {
-                        result.nError++;
-                        rowIssues++;
-                        result.issues.push({
-                            type: "E",
-                            cell: numberToColumnLetter(c + 1) + (r + 1),
-                            detail: String(value)
-                        });
+                        
+                        if (auditState.issues.length < auditConfig.maxIssues) {
+                            var issue = {
+                                type: mark,
+                                sheet: sheet.name,
+                                cell: numberToColumnLetter(c + 1) + (r + 1),
+                                actual: "",
+                                expected: ""
+                            };
+
+                            if (mark === "H") {
+                                issue.actual = truncateValue(value);
+                                issue.expected = "(row expects formula)";
+                                result.nH++;
+                            } else if (mark === "X") {
+                                issue.actual = truncateFormula(formula);
+                                issue.expected = "Dominant: " + dominant;
+                                result.nX++;
+                            } else if (mark === "E") {
+                                issue.actual = String(value);
+                                issue.expected = truncateFormula(formula);
+                                result.nE++;
+                            }
+
+                            auditState.issues.push(issue);
+                        }
                     }
                 }
 
@@ -401,317 +483,140 @@ function auditOneSheet(context, sheet) {
                 mapData.push(rowMarks);
             }
 
-            result.nIssues = result.nHardcode + result.nBreak + result.nError;
-
             // Create audit map sheet
-            return createAuditMapSheet(context, result, mapData, inspectFrom);
+            return createAuditMapSheet(context, result, mapData, pCol, gridCols);
         }).then(function() {
             resolve(result);
         }).catch(function(error) {
             console.error("Error auditing " + sheet.name + ": " + error.message);
-            resolve(result); // Return partial result
-        });
-    });
-}
-
-// ============================================
-// QUICK AUDIT SHEET (Errors Only)
-// ============================================
-function quickAuditSheet(context, sheet) {
-    return new Promise(function(resolve) {
-        var result = {
-            sheetName: sheet.name,
-            nError: 0
-        };
-
-        var usedRange = sheet.getUsedRange();
-        usedRange.load("values, rowCount, columnCount");
-
-        context.sync().then(function() {
-            var values = usedRange.values;
-            
-            for (var r = 0; r < values.length; r++) {
-                for (var c = 0; c < values[r].length; c++) {
-                    if (isErrorValue(values[r][c])) {
-                        result.nError++;
-                    }
-                }
-            }
-            
-            resolve(result);
-        }).catch(function() {
             resolve(result);
         });
     });
 }
 
 // ============================================
-// PERIOD DETECTION
+// CREATE AUDIT MAP SHEET (with Conditional Formatting)
 // ============================================
-function detectPeriod(values, nRows, nCols) {
-    var result = { row: 0, col: 0 };
-    var scanRows = Math.min(auditConfig.periodScanRows, nRows);
-    var bestRun = 0;
-
-    for (var r = 0; r < scanRows; r++) {
-        for (var c = 0; c < nCols - 2; c++) {
-            var v1 = values[r][c];
-            var v2 = values[r][c + 1];
-            var v3 = values[r][c + 2];
-
-            // Look for 1, 2, 3 sequence
-            if (isNumeric(v1) && isNumeric(v2) && isNumeric(v3)) {
-                if (Math.floor(v1) === 1 && Math.floor(v2) === 2 && Math.floor(v3) === 3) {
-                    // Count how long the run goes
-                    var runLen = 3;
-                    for (var k = c + 3; k < nCols; k++) {
-                        var vk = values[r][k];
-                        if (isNumeric(vk)) {
-                            if (Math.floor(vk) === runLen + 1) {
-                                runLen++;
-                            } else if (Math.floor(vk) > runLen + 1 && Math.floor(vk) <= runLen + 2) {
-                                // Allow small gap (total column)
-                                runLen = Math.floor(vk);
-                            } else {
-                                break;
-                            }
-                        }
-                        // Non-numeric in between is OK (total column)
-                    }
-
-                    if (runLen > bestRun) {
-                        bestRun = runLen;
-                        result.row = r + 1;  // 1-based
-                        result.col = c + 1;  // 1-based
-                    }
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
-// ============================================
-// TOTAL/SUMMARY COLUMN DETECTION
-// ============================================
-function detectTotalColumns(values, periodRowIndex, startCol, endCol) {
-    var totalCols = {};
-    var periodRow = values[periodRowIndex];
-    
-    if (!periodRow) return totalCols;
-
-    // Find extent of period numbering
-    var endPeriodCol = startCol;
-    for (var c = startCol; c < endCol; c++) {
-        if (isNumeric(periodRow[c]) && periodRow[c] !== null && periodRow[c] !== "") {
-            endPeriodCol = c;
-        }
-    }
-
-    // Any non-numeric column between start and end is a total column
-    var scanTo = Math.min(endPeriodCol + 1, endCol - 1);
-    
-    for (var c = startCol; c <= scanTo; c++) {
-        var v = periodRow[c];
-        if (v === null || v === "" || v === undefined) {
-            totalCols[c] = true;
-        } else if (!isNumeric(v)) {
-            totalCols[c] = true;
-        }
-    }
-
-    return totalCols;
-}
-
-// ============================================
-// DOMINANT PATTERN DETECTION
-// ============================================
-function getDominantPattern(formulasR1C1, rowIndex, startCol, endCol, totalCols) {
-    var patternCounts = {};
-    var nFormulas = 0;
-
-    for (var c = startCol; c <= endCol; c++) {
-        if (totalCols[c]) continue;
-
-        var raw = formulasR1C1[rowIndex][c];
-        if (raw === null || raw === undefined) continue;
-        if (typeof raw !== "string") continue;
-        
-        var key = String(raw);
-        if (key.length === 0 || key.charAt(0) !== "=") continue;
-
-        nFormulas++;
-        patternCounts[key] = (patternCounts[key] || 0) + 1;
-    }
-
-    if (nFormulas < auditConfig.minFormulasForDominant) {
-        return "";
-    }
-
-    // Find most common pattern
-    var maxCount = 0;
-    var maxKey = "";
-    for (var key in patternCounts) {
-        if (patternCounts[key] > maxCount) {
-            maxCount = patternCounts[key];
-            maxKey = key;
-        }
-    }
-
-    // Only accept as dominant if it covers a decent share
-    if (maxCount >= nFormulas * 0.4) {
-        return maxKey;
-    }
-
-    return ""; // Too fragmented
-}
-
-// ============================================
-// CELL CLASSIFICATION
-// ============================================
-function classifyCell(value, formula, formulaR1C1, dominant, isTotalCol) {
-    var isFormulaCell = (typeof formula === "string" && formula.length > 0 && formula.charAt(0) === "=");
-
-    // Empty cell
-    if ((value === null || value === "" || value === undefined) && !isFormulaCell) {
-        return "";
-    }
-
-    // Error value
-    if (isErrorValue(value)) {
-        return "E";
-    }
-
-    // Total/summary column
-    if (isTotalCol) {
-        return "S";
-    }
-
-    // Hardcode (not a formula, has a value)
-    if (!isFormulaCell) {
-        return "H";
-    }
-
-    // Formula - check against dominant pattern
-    if (dominant.length > 0 && formulaR1C1 !== dominant) {
-        return "X";
-    }
-
-    return ".";
-}
-
-// ============================================
-// CREATE AUDIT MAP SHEET
-// ============================================
-function createAuditMapSheet(context, result, mapData, inspectFrom) {
+function createAuditMapSheet(context, result, mapData, pCol, gridCols) {
     return new Promise(function(resolve, reject) {
         var sheets = context.workbook.worksheets;
         var audSheet = sheets.add(result.auditName);
 
-        // Title
-        audSheet.getRange("A1").values = [["AUDIT MAP: " + result.sheetName]];
+        // Title and info
+        audSheet.getRange("A1").values = [["AUDIT: " + result.sheetName]];
         audSheet.getRange("A1").format.font.bold = true;
         audSheet.getRange("A1").format.font.size = 13;
 
-        // Info row
-        var infoText = "";
-        if (result.periodCol > 0) {
-            infoText = "Period detected: row " + result.periodRow + ", starts col " + numberToColumnLetter(result.periodCol);
-        } else {
-            infoText = "No period row detected - auditing from col " + numberToColumnLetter(inspectFrom + 1);
-        }
-        
-        var totalColsList = Object.keys(result.totalCols);
-        if (totalColsList.length > 0) {
-            infoText += "  |  Total cols: " + totalColsList.map(function(c) {
-                return numberToColumnLetter(parseInt(c) + 1);
-            }).join(" ");
-        }
-        
+        var infoText = result.periodCol > 0 
+            ? "Period: row " + result.periodRow + " col " + numberToColumnLetter(result.periodCol)
+            : "No period detected";
         audSheet.getRange("A2").values = [[infoText]];
-        audSheet.getRange("A2").format.font.color = "#646464";
+        audSheet.getRange("A2").format.font.color = "#787878";
 
-        // Legend
-        var legends = [". = OK", "H = Hardcode", "X = Break", "E = Error", "S = Total col"];
-        for (var i = 0; i < legends.length; i++) {
-            var cell = audSheet.getRange(numberToColumnLetter(i + 1) + "3");
-            cell.values = [[legends[i]]];
-            cell.format.font.size = 8;
-            cell.format.font.color = "#787878";
-        }
+        audSheet.getRange("A3").values = [[". OK | H Hardcode | X Break | E Error | S Total"]];
+        audSheet.getRange("A3").format.font.size = 8;
+        audSheet.getRange("A3").format.font.color = "#8C8C8C";
 
-        // Write map data starting at row 5
-        if (mapData.length > 0) {
+        if (mapData.length > 1) {
+            // Write data starting at row 5
             var dataRange = audSheet.getRange("A5").getResizedRange(mapData.length - 1, mapData[0].length - 1);
             dataRange.values = mapData;
 
-            // Format header row
+            // Format header row (row 5)
             var headerRange = audSheet.getRange("A5").getResizedRange(0, mapData[0].length - 1);
             headerRange.format.font.bold = true;
-            headerRange.format.fill.color = auditColors.headerBg;
-            headerRange.format.font.color = auditColors.white;
 
-            // Format data rows (apply colors based on marks)
-            for (var r = 1; r < mapData.length; r++) {
-                var excelRow = 5 + r;
+            // Format grid header (columns D onwards)
+            if (mapData[0].length > 3) {
+                var gridHeaderRange = audSheet.getRange("D5").getResizedRange(0, gridCols - 1);
+                gridHeaderRange.format.fill.color = auditColors.headerBg;
+                gridHeaderRange.format.font.color = auditColors.white;
+                gridHeaderRange.format.font.size = 7;
+                gridHeaderRange.format.horizontalAlignment = "Center";
+            }
+
+            // Apply conditional formatting to the grid (FAST - no Union needed)
+            if (mapData.length > 1 && gridCols > 0) {
+                var gridDataRange = audSheet.getRange("D6").getResizedRange(mapData.length - 2, gridCols - 1);
+                gridDataRange.format.horizontalAlignment = "Center";
+                gridDataRange.format.font.size = 9;
+                gridDataRange.format.font.bold = true;
+
+                // Clear existing and add conditional formatting rules
+                gridDataRange.conditionalFormats.clearAll();
+
+                // Rule 1: . = OK (green)
+                var cfOk = gridDataRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+                cfOk.cellValue.format.fill.color = auditColors.clean;
+                cfOk.cellValue.format.font.color = "#64AA64";
+                cfOk.cellValue.rule = { formula1: '"."', operator: Excel.ConditionalCellValueOperator.equalTo };
+
+                // Rule 2: H = Hardcode (orange)
+                var cfH = gridDataRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+                cfH.cellValue.format.fill.color = auditColors.hardcode;
+                cfH.cellValue.format.font.color = "#824600";
+                cfH.cellValue.rule = { formula1: '"H"', operator: Excel.ConditionalCellValueOperator.equalTo };
+
+                // Rule 3: X = Break (red)
+                var cfX = gridDataRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+                cfX.cellValue.format.fill.color = auditColors.break;
+                cfX.cellValue.format.font.color = auditColors.white;
+                cfX.cellValue.rule = { formula1: '"X"', operator: Excel.ConditionalCellValueOperator.equalTo };
+
+                // Rule 4: E = Error (bright red)
+                var cfE = gridDataRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+                cfE.cellValue.format.fill.color = auditColors.error;
+                cfE.cellValue.format.font.color = auditColors.white;
+                cfE.cellValue.rule = { formula1: '"E"', operator: Excel.ConditionalCellValueOperator.equalTo };
+
+                // Rule 5: S = Summary (gold)
+                var cfS = gridDataRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+                cfS.cellValue.format.fill.color = auditColors.summary;
+                cfS.cellValue.format.font.color = "#8C8250";
+                cfS.cellValue.rule = { formula1: '"S"', operator: Excel.ConditionalCellValueOperator.equalTo };
+            }
+
+            // Format check column (column C)
+            if (mapData.length > 1) {
+                var checkRange = audSheet.getRange("C6").getResizedRange(mapData.length - 2, 0);
+                checkRange.format.horizontalAlignment = "Center";
+                checkRange.format.font.size = 8;
+
+                checkRange.conditionalFormats.clearAll();
                 
-                // Row check column color
-                var checkCell = audSheet.getRange("C" + excelRow);
-                if (mapData[r][2] === "✓") {
-                    checkCell.format.font.color = "#008C00";
-                } else {
-                    checkCell.format.font.color = "#C80000";
-                    checkCell.format.font.bold = true;
-                }
+                var cfCheck = checkRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+                cfCheck.cellValue.format.font.color = "#008C00";
+                cfCheck.cellValue.rule = { formula1: '"✓"', operator: Excel.ConditionalCellValueOperator.equalTo };
 
-                // Data cells (starting from column D)
-                for (var c = 3; c < mapData[r].length; c++) {
-                    var mark = mapData[r][c];
-                    var colLetter = numberToColumnLetter(c + 1);
-                    var cell = audSheet.getRange(colLetter + excelRow);
+                var cfCheckBad = checkRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+                cfCheckBad.cellValue.format.font.color = "#C80000";
+                cfCheckBad.cellValue.format.font.bold = true;
+                cfCheckBad.cellValue.rule = { formula1: '"✓"', operator: Excel.ConditionalCellValueOperator.notEqualTo };
+            }
 
-                    cell.format.horizontalAlignment = "Center";
-                    cell.format.font.size = 9;
-                    cell.format.font.bold = true;
+            // Format row number column (column A)
+            if (mapData.length > 1) {
+                var rowNumRange = audSheet.getRange("A6").getResizedRange(mapData.length - 2, 0);
+                rowNumRange.format.font.size = 8;
+                rowNumRange.format.font.color = "#969696";
+            }
 
-                    switch (mark) {
-                        case ".":
-                            cell.format.fill.color = auditColors.clean;
-                            cell.format.font.color = "#64AA64";
-                            break;
-                        case "H":
-                            cell.format.fill.color = auditColors.hardcode;
-                            cell.format.font.color = "#824600";
-                            break;
-                        case "X":
-                            cell.format.fill.color = auditColors.break;
-                            cell.format.font.color = auditColors.white;
-                            break;
-                        case "E":
-                            cell.format.fill.color = auditColors.error;
-                            cell.format.font.color = auditColors.white;
-                            break;
-                        case "S":
-                            cell.format.fill.color = auditColors.summary;
-                            cell.format.font.color = "#8C8250";
-                            break;
-                    }
-                }
+            // Format label column (column B)
+            if (mapData.length > 1) {
+                var labelRange = audSheet.getRange("B6").getResizedRange(mapData.length - 2, 0);
+                labelRange.format.font.size = 8;
             }
         }
 
-        // Set column widths
+        // Column widths
         audSheet.getRange("A:A").format.columnWidth = 40;
-        audSheet.getRange("B:B").format.columnWidth = 150;
+        audSheet.getRange("B:B").format.columnWidth = 160;
         audSheet.getRange("C:C").format.columnWidth = 30;
 
         // Freeze panes
         audSheet.freezePanes.freezeRows(5);
 
-        context.sync().then(function() {
-            resolve();
-        }).catch(reject);
+        context.sync().then(resolve).catch(reject);
     });
 }
 
@@ -724,83 +629,71 @@ function buildDashboard(context) {
         var dash = sheets.add(auditConfig.dashboardName);
         dash.position = 0;
 
+        var totalIssues = auditState.totalH + auditState.totalX + auditState.totalE;
+
         // Title
         dash.getRange("A1").values = [["MODEL AUDIT DASHBOARD"]];
         dash.getRange("A1").format.font.bold = true;
         dash.getRange("A1").format.font.size = 16;
         dash.getRange("A1").format.font.color = "#1E3C64";
 
-        dash.getRange("A2").values = [["Generated: " + new Date().toLocaleString()]];
-        dash.getRange("A2").format.font.color = "#787878";
+        dash.getRange("A2").values = [[new Date().toLocaleString()]];
+        dash.getRange("A2").format.font.color = "#969696";
 
         // Scoreboard
-        writeScoreBox(dash, "I1", "Total Issues", auditState.totalIssues, 
-            auditState.totalIssues === 0 ? auditColors.clean : "#FFC7CE");
-        writeScoreBox(dash, "K1", "Hardcodes", auditState.totalHardcodes, "#FFE6B4");
-        writeScoreBox(dash, "M1", "Breaks", auditState.totalBreaks, "#FFC7CE");
-        writeScoreBox(dash, "O1", "Errors", auditState.totalErrors, 
-            auditState.totalErrors === 0 ? auditColors.clean : auditColors.error);
+        writeScoreBox(dash, "H1", "Total", totalIssues, totalIssues === 0 ? auditColors.clean : "#FFC7CE");
+        writeScoreBox(dash, "J1", "H", auditState.totalH, "#FFE6B4");
+        writeScoreBox(dash, "L1", "X", auditState.totalX, "#FFC7CE");
+        writeScoreBox(dash, "N1", "E", auditState.totalE, auditState.totalE === 0 ? auditColors.clean : "#FF3232");
 
         // Sheet summary table
-        var summaryHeaders = [["Sheet", "Period Col", "Hardcodes (H)", "Breaks (X)", "Errors (E)", "Total Issues", "Audit Map"]];
+        var summaryHeaders = [["Sheet", "Period", "H", "X", "E", "Total", "Map"]];
         dash.getRange("A4:G4").values = summaryHeaders;
         dash.getRange("A4:G4").format.font.bold = true;
         dash.getRange("A4:G4").format.fill.color = auditColors.headerBg;
         dash.getRange("A4:G4").format.font.color = auditColors.white;
+        dash.getRange("A4:G4").format.horizontalAlignment = "Center";
 
         // Write sheet results
-        for (var i = 0; i < auditState.results.length; i++) {
-            var res = auditState.results[i];
-            var rowNum = 5 + i;
-            var rowRange = dash.getRange("A" + rowNum + ":G" + rowNum);
+        if (auditState.results.length > 0) {
+            var sheetData = auditState.results.map(function(res) {
+                var periodText = res.periodCol > 0 
+                    ? numberToColumnLetter(res.periodCol) + " r" + res.periodRow 
+                    : "N/A";
+                var total = (res.nH || 0) + (res.nX || 0) + (res.nE || 0);
+                return [res.sheetName, periodText, res.nH || 0, res.nX || 0, res.nE || 0, total, "-> Map"];
+            });
 
-            var periodText = res.periodCol > 0 
-                ? numberToColumnLetter(res.periodCol) + " (row " + res.periodRow + ")"
-                : "N/A";
+            var dataRange = dash.getRange("A5").getResizedRange(sheetData.length - 1, 6);
+            dataRange.values = sheetData;
 
-            rowRange.values = [[
-                res.sheetName,
-                periodText,
-                res.nHardcode || 0,
-                res.nBreak || 0,
-                res.nError || 0,
-                res.nIssues || 0,
-                "→ " + (res.auditName || "N/A")
-            ]];
+            // Conditional formatting for total column
+            var totalColRange = dash.getRange("F5").getResizedRange(sheetData.length - 1, 0);
+            totalColRange.format.font.bold = true;
+            totalColRange.conditionalFormats.clearAll();
 
-            // Color total issues cell
-            var totalCell = dash.getRange("F" + rowNum);
-            if ((res.nIssues || 0) === 0) {
-                totalCell.format.fill.color = auditColors.clean;
-            } else if ((res.nIssues || 0) <= 10) {
-                totalCell.format.fill.color = "#FFEB9C";
-            } else {
-                totalCell.format.fill.color = "#FFC7CE";
-            }
-            totalCell.format.font.bold = true;
+            var cfZero = totalColRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+            cfZero.cellValue.format.fill.color = auditColors.clean;
+            cfZero.cellValue.rule = { formula1: "0", operator: Excel.ConditionalCellValueOperator.equalTo };
 
-            // Add hyperlink styling to audit map
-            if (res.auditName) {
-                var linkCell = dash.getRange("G" + rowNum);
-                linkCell.format.font.color = "#0563C1";
-                linkCell.format.font.underline = "Single";
-            }
+            var cfLow = totalColRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+            cfLow.cellValue.format.fill.color = "#FFEB9C";
+            cfLow.cellValue.rule = { formula1: "1", formula2: "10", operator: Excel.ConditionalCellValueOperator.between };
 
-            // Alternating row colors
-            if (i % 2 === 1) {
-                dash.getRange("A" + rowNum + ":E" + rowNum).format.fill.color = "#F2F2F2";
-            }
+            var cfHigh = totalColRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+            cfHigh.cellValue.format.fill.color = "#FFC7CE";
+            cfHigh.cellValue.rule = { formula1: "10", operator: Excel.ConditionalCellValueOperator.greaterThan };
+
+            // Map column styling
+            var mapColRange = dash.getRange("G5").getResizedRange(sheetData.length - 1, 0);
+            mapColRange.format.font.color = "#0563C1";
+            mapColRange.format.font.underline = "Single";
         }
 
         // Totals row
         var totRow = 5 + auditState.results.length;
         dash.getRange("A" + totRow + ":G" + totRow).values = [[
-            "TOTAL", "", 
-            auditState.totalHardcodes, 
-            auditState.totalBreaks, 
-            auditState.totalErrors, 
-            auditState.totalIssues, 
-            ""
+            "TOTAL", "", auditState.totalH, auditState.totalX, auditState.totalE, totalIssues, ""
         ]];
         dash.getRange("A" + totRow + ":G" + totRow).format.font.bold = true;
 
@@ -810,93 +703,86 @@ function buildDashboard(context) {
         dash.getRange("A" + issueHeaderRow).format.font.bold = true;
         dash.getRange("A" + issueHeaderRow).format.font.size = 13;
 
-        var issueTableHeader = issueHeaderRow + 1;
-        dash.getRange("A" + issueTableHeader + ":E" + issueTableHeader).values = [[
-            "Type", "Sheet", "Cell", "Detail / Formula", "Jump"
-        ]];
-        dash.getRange("A" + issueTableHeader + ":E" + issueTableHeader).format.font.bold = true;
-        dash.getRange("A" + issueTableHeader + ":E" + issueTableHeader).format.fill.color = auditColors.headerBg;
-        dash.getRange("A" + issueTableHeader + ":E" + issueTableHeader).format.font.color = auditColors.white;
+        if (auditState.issues.length > 0) {
+            var cappedNote = auditState.issues.length >= auditConfig.maxIssues ? " (capped at " + auditConfig.maxIssues + ")" : "";
+            dash.getRange("A" + (issueHeaderRow + 1)).values = [[auditState.issues.length + " issues" + cappedNote]];
+            dash.getRange("A" + (issueHeaderRow + 1)).format.font.color = "#969696";
+        }
 
-        // Write all issues
-        var issueRow = issueTableHeader + 1;
-        for (var i = 0; i < auditState.results.length; i++) {
-            var res = auditState.results[i];
-            if (!res.issues) continue;
+        var issueTableRow = issueHeaderRow + 2;
+        var issueHeaders = [["Type", "Sheet", "Cell", "Formula / Value", "Expected Pattern", "Go"]];
+        dash.getRange("A" + issueTableRow + ":F" + issueTableRow).values = issueHeaders;
+        dash.getRange("A" + issueTableRow + ":F" + issueTableRow).format.font.bold = true;
+        dash.getRange("A" + issueTableRow + ":F" + issueTableRow).format.fill.color = auditColors.headerBg;
+        dash.getRange("A" + issueTableRow + ":F" + issueTableRow).format.font.color = auditColors.white;
 
-            for (var j = 0; j < res.issues.length; j++) {
-                var issue = res.issues[j];
-                var detail = issue.detail || "";
-                if (detail.length > 80) detail = detail.substring(0, 80) + "...";
+        // Write issues
+        if (auditState.issues.length > 0) {
+            var issueData = auditState.issues.map(function(issue) {
+                return [issue.type, issue.sheet, issue.cell, issue.actual, issue.expected, "Go"];
+            });
 
-                dash.getRange("A" + issueRow + ":E" + issueRow).values = [[
-                    issue.type,
-                    res.sheetName,
-                    issue.cell,
-                    detail,
-                    "Go"
-                ]];
+            var issueDataRange = dash.getRange("A" + (issueTableRow + 1)).getResizedRange(issueData.length - 1, 5);
+            issueDataRange.values = issueData;
 
-                // Type color
-                var typeCell = dash.getRange("A" + issueRow);
-                switch (issue.type) {
-                    case "H":
-                        typeCell.format.fill.color = auditColors.hardcode;
-                        break;
-                    case "X":
-                        typeCell.format.fill.color = auditColors.break;
-                        typeCell.format.font.color = auditColors.white;
-                        break;
-                    case "E":
-                        typeCell.format.fill.color = auditColors.error;
-                        typeCell.format.font.color = auditColors.white;
-                        break;
-                }
+            // Conditional formatting for type column
+            var typeColRange = dash.getRange("A" + (issueTableRow + 1)).getResizedRange(issueData.length - 1, 0);
+            typeColRange.conditionalFormats.clearAll();
 
-                // Jump link styling
-                dash.getRange("E" + issueRow).format.font.color = "#0563C1";
+            var cfTypeH = typeColRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+            cfTypeH.cellValue.format.fill.color = auditColors.hardcode;
+            cfTypeH.cellValue.rule = { formula1: '"H"', operator: Excel.ConditionalCellValueOperator.equalTo };
 
-                issueRow++;
-            }
+            var cfTypeX = typeColRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+            cfTypeX.cellValue.format.fill.color = auditColors.break;
+            cfTypeX.cellValue.format.font.color = auditColors.white;
+            cfTypeX.cellValue.rule = { formula1: '"X"', operator: Excel.ConditionalCellValueOperator.equalTo };
+
+            var cfTypeE = typeColRange.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+            cfTypeE.cellValue.format.fill.color = auditColors.error;
+            cfTypeE.cellValue.format.font.color = auditColors.white;
+            cfTypeE.cellValue.rule = { formula1: '"E"', operator: Excel.ConditionalCellValueOperator.equalTo };
+
+            // Go column styling
+            var goColRange = dash.getRange("F" + (issueTableRow + 1)).getResizedRange(issueData.length - 1, 0);
+            goColRange.format.font.color = "#0563C1";
         }
 
         // Column widths
-        dash.getRange("A:A").format.columnWidth = 60;
-        dash.getRange("B:B").format.columnWidth = 120;
-        dash.getRange("C:C").format.columnWidth = 60;
-        dash.getRange("D:D").format.columnWidth = 250;
-        dash.getRange("E:E").format.columnWidth = 40;
-        dash.getRange("F:F").format.columnWidth = 80;
-        dash.getRange("G:G").format.columnWidth = 120;
+        dash.getRange("A:A").format.columnWidth = 50;
+        dash.getRange("B:B").format.columnWidth = 130;
+        dash.getRange("C:C").format.columnWidth = 50;
+        dash.getRange("D:D").format.columnWidth = 280;
+        dash.getRange("E:E").format.columnWidth = 200;
+        dash.getRange("F:F").format.columnWidth = 40;
+        dash.getRange("G:G").format.columnWidth = 80;
 
         context.sync().then(resolve).catch(reject);
     });
 }
 
 // ============================================
-// HELPER: Write Score Box
+// HELPER FUNCTIONS
 // ============================================
-function writeScoreBox(sheet, startCell, title, value, bgColor) {
-    var titleCell = sheet.getRange(startCell);
-    titleCell.values = [[title]];
-    titleCell.format.font.size = 9;
-    titleCell.format.font.bold = true;
-    titleCell.format.font.color = "#505050";
-
-    // Value is one row below
-    var col = startCell.replace(/[0-9]/g, '');
-    var row = parseInt(startCell.replace(/[A-Z]/gi, ''));
-    var valueCell = sheet.getRange(col + (row + 1));
-    valueCell.values = [[value]];
-    valueCell.format.font.size = 22;
-    valueCell.format.font.bold = true;
-    valueCell.format.fill.color = bgColor;
-    valueCell.format.horizontalAlignment = "Center";
+function resetAuditState() {
+    auditState = {
+        results: [],
+        issues: [],
+        totalH: 0,
+        totalX: 0,
+        totalE: 0,
+        sheetsToAudit: [],
+        allSheetNames: auditState.allSheetNames || []
+    };
 }
 
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
+function showAuditComplete() {
+    var totalIssues = auditState.totalH + auditState.totalX + auditState.totalE;
+    setAuditStatus("ok", "Audit complete! " + totalIssues + " issues found");
+    toast("Done! See " + auditConfig.dashboardName);
+    displayAuditSummary();
+}
+
 function isAuditSheet(name) {
     var upper = name.toUpperCase();
     return upper.indexOf(auditConfig.audPrefix.toUpperCase()) === 0 ||
@@ -908,59 +794,122 @@ function safeAuditName(srcName) {
     if (name.length > auditConfig.maxSheetNameLength) {
         name = name.substring(0, auditConfig.maxSheetNameLength);
     }
-    // Remove invalid characters
     name = name.replace(/[:\\\/?*\[\]]/g, "_");
     return name;
 }
 
 function purgeOldAuditSheets(context, sheets) {
-    var toDelete = sheets.filter(function(s) {
-        return isAuditSheet(s.name);
-    });
-
-    toDelete.forEach(function(s) {
-        s.delete();
-    });
-
+    var toDelete = sheets.filter(function(s) { return isAuditSheet(s.name); });
+    toDelete.forEach(function(s) { s.delete(); });
     return context.sync();
 }
 
-function isNumeric(value) {
-    return typeof value === "number" && !isNaN(value);
-}
+function detectPeriod(values, nRows, nCols) {
+    var result = { row: 0, col: 0 };
+    var scanRows = Math.min(auditConfig.periodScanRows, nRows);
+    var bestRun = 0;
 
-function isErrorValue(value) {
-    if (typeof value === "string") {
-        return value.charAt(0) === "#" && (
-            value === "#DIV/0!" || value === "#N/A" || value === "#NAME?" ||
-            value === "#NULL!" || value === "#NUM!" || value === "#REF!" ||
-            value === "#VALUE!" || value === "#CALC!" || value === "#SPILL!"
-        );
-    }
-    return false;
-}
-
-function isRowBlank(values, rowIndex, startCol, endCol) {
-    for (var c = startCol; c < endCol; c++) {
-        var v = values[rowIndex][c];
-        if (v !== null && v !== "" && v !== undefined) {
-            return false;
+    for (var r = 0; r < scanRows; r++) {
+        for (var c = 0; c < nCols - 2; c++) {
+            var v1 = values[r][c], v2 = values[r][c + 1], v3 = values[r][c + 2];
+            
+            if (isNumeric(v1) && isNumeric(v2) && isNumeric(v3)) {
+                if (Math.floor(v1) === 1 && Math.floor(v2) === 2 && Math.floor(v3) === 3) {
+                    var runLen = 3;
+                    for (var k = c + 3; k < nCols; k++) {
+                        var vk = values[r][k];
+                        if (isNumeric(vk)) {
+                            if (Math.floor(vk) >= runLen + 1 && Math.floor(vk) <= runLen + 2) {
+                                runLen = Math.floor(vk);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    if (runLen > bestRun) {
+                        bestRun = runLen;
+                        result.row = r + 1;
+                        result.col = c + 1;
+                    }
+                }
+            }
         }
     }
-    return true;
+    return result;
+}
+
+function detectTotalColumns(values, periodRowIndex, startCol, endCol) {
+    var totalCols = {};
+    var periodRow = values[periodRowIndex];
+    if (!periodRow) return totalCols;
+
+    var scanTo = Math.min(endCol, periodRow.length);
+    for (var c = startCol; c < scanTo; c++) {
+        var v = periodRow[c];
+        if (v === null || v === "" || v === undefined || !isNumeric(v)) {
+            totalCols[c] = true;
+        }
+    }
+    return totalCols;
+}
+
+function getDominantPattern(formulasR1C1, rowIndex, startCol, endCol, totalCols) {
+    var patternCounts = {};
+    var nFormulas = 0;
+
+    for (var c = startCol; c <= endCol; c++) {
+        if (totalCols[c]) continue;
+        var raw = formulasR1C1[rowIndex][c];
+        if (raw === null || raw === undefined || typeof raw !== "string") continue;
+        var key = String(raw);
+        if (key.length === 0 || key.charAt(0) !== "=") continue;
+        nFormulas++;
+        patternCounts[key] = (patternCounts[key] || 0) + 1;
+    }
+
+    if (nFormulas < auditConfig.minFormulasForDominant) return "";
+
+    var maxCount = 0, maxKey = "";
+    for (var key in patternCounts) {
+        if (patternCounts[key] > maxCount) {
+            maxCount = patternCounts[key];
+            maxKey = key;
+        }
+    }
+
+    return maxCount >= nFormulas * 0.4 ? maxKey : "";
+}
+
+function classifyCell(value, formula, formulaR1C1, dominant, isTotalCol) {
+    var isFormula = typeof formula === "string" && formula.length > 0 && formula.charAt(0) === "=";
+
+    if ((value === null || value === "" || value === undefined) && !isFormula) return "";
+    if (isErrorValue(value)) return "E";
+    if (isTotalCol) return "S";
+    if (!isFormula) return "H";
+    if (dominant.length > 0 && formulaR1C1 !== dominant) return "X";
+    return ".";
 }
 
 function getRowLabel(values, rowIndex) {
     var best = "";
-    for (var c = 0; c < Math.min(auditConfig.labelCols, values[rowIndex].length); c++) {
+    var labelCols = Math.min(auditConfig.labelCols, values[rowIndex].length);
+    for (var c = 0; c < labelCols; c++) {
         var v = values[rowIndex][c];
         if (v !== null && v !== "" && v !== undefined && !isErrorValue(v)) {
             var s = String(v).trim();
             if (s.length > best.length) best = s;
         }
     }
-    if (best.length > 40) best = best.substring(0, 40) + "...";
+    if (best.length > 42) best = best.substring(0, 42) + "...";
     return best;
+}
+
+function isNumeric(value) { return typeof value === "number" && !isNaN(value); }
+
+function isErrorValue(value) {
+    if (typeof value !== "string") return false;
+    return value.charAt(0) === "#" && ["#DIV/0!", "#N/A", "#NAME?", "#NULL!", "#NUM!", "#REF!", "#VALUE!", "#CALC!", "#SPILL!"].indexOf(value) >= 0;
 }
 
 function numberToColumnLetter(num) {
@@ -994,11 +943,33 @@ function columnLetterToNumber(letters) {
 
 function truncateValue(value) {
     var s = String(value);
-    return s.length > 50 ? s.substring(0, 50) + "..." : s;
+    return s.length > 80 ? s.substring(0, 80) + "..." : s;
 }
 
 function truncateFormula(formula) {
-    return formula.length > 120 ? formula.substring(0, 120) + "..." : formula;
+    return formula && formula.length > 80 ? formula.substring(0, 80) + "..." : (formula || "");
+}
+
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function writeScoreBox(sheet, startCell, title, value, bgColor) {
+    var titleCell = sheet.getRange(startCell);
+    titleCell.values = [[title]];
+    titleCell.format.font.size = 9;
+    titleCell.format.font.bold = true;
+
+    var col = startCell.replace(/[0-9]/g, '');
+    var row = parseInt(startCell.replace(/[A-Z]/gi, ''));
+    var valueCell = sheet.getRange(col + (row + 1));
+    valueCell.values = [[value]];
+    valueCell.format.font.size = 20;
+    valueCell.format.font.bold = true;
+    valueCell.format.fill.color = bgColor;
+    valueCell.format.horizontalAlignment = "Center";
 }
 
 // ============================================
@@ -1008,27 +979,47 @@ function displayAuditSummary() {
     var summaryDiv = document.getElementById('auditSummary');
     if (!summaryDiv) return;
 
+    var totalIssues = auditState.totalH + auditState.totalX + auditState.totalE;
+
     var html = '<div class="audit-summary-cards">';
-    html += '<div class="audit-card critical"><span class="count">' + auditState.totalErrors + '</span><span class="label">Errors</span></div>';
-    html += '<div class="audit-card warning"><span class="count">' + auditState.totalHardcodes + '</span><span class="label">Hardcodes</span></div>';
-    html += '<div class="audit-card warning"><span class="count">' + auditState.totalBreaks + '</span><span class="label">Breaks</span></div>';
+    html += '<div class="audit-card critical"><span class="count">' + auditState.totalE + '</span><span class="label">Errors</span></div>';
+    html += '<div class="audit-card warning"><span class="count">' + auditState.totalH + '</span><span class="label">Hardcodes</span></div>';
+    html += '<div class="audit-card warning"><span class="count">' + auditState.totalX + '</span><span class="label">Breaks</span></div>';
     html += '</div>';
 
-    // Top issues
     if (auditState.results.length > 0) {
         html += '<div class="audit-issues-list">';
-        html += '<p class="kicker">Sheets Audited</p>';
+        html += '<p class="kicker">Sheets Audited (' + auditState.results.length + ')</p>';
 
         auditState.results.slice(0, 5).forEach(function(res) {
-            var statusClass = (res.nIssues || 0) === 0 ? "info" : ((res.nIssues || 0) > 10 ? "critical" : "warning");
+            var total = (res.nH || 0) + (res.nX || 0) + (res.nE || 0);
+            var statusClass = total === 0 ? "info" : (total > 10 ? "critical" : "warning");
             html += '<div class="audit-issue-item ' + statusClass + '">';
-            html += '<span class="issue-type">' + res.sheetName + '</span>';
-            html += '<span class="issue-location">' + (res.nIssues || 0) + ' issues</span>';
+            html += '<span class="issue-type">' + escapeHtml(res.sheetName) + '</span>';
+            html += '<span class="issue-location">' + total + ' issues</span>';
             html += '</div>';
         });
 
         if (auditState.results.length > 5) {
             html += '<p class="more-issues">... and ' + (auditState.results.length - 5) + ' more sheets</p>';
+        }
+        html += '</div>';
+    }
+
+    if (auditState.issues.length > 0) {
+        html += '<div class="audit-issues-list" style="margin-top:12px;">';
+        html += '<p class="kicker">Top Issues</p>';
+        
+        auditState.issues.slice(0, 5).forEach(function(issue) {
+            var typeClass = issue.type === "E" ? "critical" : "warning";
+            html += '<div class="audit-issue-item ' + typeClass + '">';
+            html += '<span class="issue-type">' + issue.type + ': ' + issue.cell + '</span>';
+            html += '<span class="issue-location">' + escapeHtml(issue.sheet) + '</span>';
+            html += '</div>';
+        });
+
+        if (auditState.issues.length > 5) {
+            html += '<p class="more-issues">... and ' + (auditState.issues.length - 5) + ' more issues</p>';
         }
         html += '</div>';
     }
