@@ -1,11 +1,9 @@
 // ============================================
-// ORNA MODULE: Financial Model Audit Tool v6
+// ORNA MODULE: Financial Model Audit Tool v8
 // ============================================
-// Simplified, robust version
-// - Only audits rows with labels in columns A-D
-// - X breaks show expected vs actual
-// - Selective sheet audit
-// - Issues capped at 2000
+// - Colors on audit map: H=Yellow, X=Red, E=Orange
+// - Dashboard summary uses COUNTIF formulas (auto-update when you delete issues)
+// - Issue detail as Excel Table with AutoFilter
 // ============================================
 
 var auditConfig = {
@@ -287,7 +285,6 @@ function doAudit(context) {
 
         function next() {
             if (idx >= total) {
-                // Build dashboard
                 updateAuditProgress(90, "Building dashboard...");
                 return makeDashboard(context);
             }
@@ -351,14 +348,12 @@ function auditSheet(context, sheetName) {
         var nRows = usedRange.rowCount;
         var nCols = usedRange.columnCount;
 
-        // Detect period row
         var period = detectPeriod(values, nRows, nCols);
         result.periodRow = period.row;
         result.periodCol = period.col;
 
         var startCol = period.col > 0 ? period.col - 1 : auditConfig.labelCols;
 
-        // Detect total columns
         var totals = {};
         if (period.row > 0) {
             totals = detectTotals(values, period.row - 1, startCol, nCols);
@@ -391,9 +386,10 @@ function auditSheet(context, sheetName) {
             return result;
         }
 
-        // Build map data
+        // Build map data and track cell positions for coloring
         var gridCols = nCols - startCol;
         var mapData = [];
+        var colorCells = { H: [], X: [], E: [], ok: [], S: [] };
 
         // Header
         var hdr = ["Row", "Label", "#"];
@@ -420,6 +416,16 @@ function auditSheet(context, sheetName) {
                 var mark = classify(val, frm, frc, dom, isTotal);
                 rowData.push(mark);
 
+                // Track position for coloring (row in map = li+1 because of header, col = c-startCol+3 for D onwards)
+                var mapRowIdx = li + 1; // 0 is header
+                var mapColIdx = c - startCol + 3; // columns D, E, F...
+                
+                if (mark === "H") colorCells.H.push({ r: mapRowIdx, c: mapColIdx });
+                else if (mark === "X") colorCells.X.push({ r: mapRowIdx, c: mapColIdx });
+                else if (mark === "E") colorCells.E.push({ r: mapRowIdx, c: mapColIdx });
+                else if (mark === "S") colorCells.S.push({ r: mapRowIdx, c: mapColIdx });
+                else if (mark === ".") colorCells.ok.push({ r: mapRowIdx, c: mapColIdx });
+
                 if ((mark === "H" || mark === "X" || mark === "E") && auditState.issues.length < auditConfig.maxIssues) {
                     rowIssues++;
                     var issue = {
@@ -441,17 +447,17 @@ function auditSheet(context, sheetName) {
             mapData.push(rowData);
         }
 
-        // Create audit map sheet
-        return createMapSheet(context, result, mapData, gridCols);
+        // Create audit map sheet with colors
+        return createMapSheet(context, result, mapData, gridCols, colorCells);
     }).then(function() {
         return result;
     });
 }
 
 // ============================================
-// CREATE AUDIT MAP SHEET
+// CREATE AUDIT MAP SHEET WITH COLORS
 // ============================================
-function createMapSheet(context, result, mapData, gridCols) {
+function createMapSheet(context, result, mapData, gridCols, colorCells) {
     var ws = context.workbook.worksheets.add(result.auditName);
 
     // Title
@@ -466,10 +472,19 @@ function createMapSheet(context, result, mapData, gridCols) {
     ws.getRange("A2").values = [[info]];
     ws.getRange("A2").format.font.color = "#888888";
 
-    // Legend
-    ws.getRange("A3").values = [[". OK | H Hardcode | X Break | E Error | S Total"]];
-    ws.getRange("A3").format.font.size = 8;
-    ws.getRange("A3").format.font.color = "#888888";
+    // Legend with colors
+    ws.getRange("A3").values = [[". OK"]];
+    ws.getRange("A3").format.fill.color = "#DAF2DA";
+    ws.getRange("B3").values = [["H Hardcode"]];
+    ws.getRange("B3").format.fill.color = "#FFFF00"; // Yellow
+    ws.getRange("C3").values = [["X Break"]];
+    ws.getRange("C3").format.fill.color = "#FF6B6B"; // Red
+    ws.getRange("D3").values = [["E Error"]];
+    ws.getRange("D3").format.fill.color = "#FFA500"; // Orange
+    ws.getRange("E3").values = [["S Total"]];
+    ws.getRange("E3").format.fill.color = "#FFF2CC";
+    ws.getRange("A3:E3").format.font.size = 8;
+    ws.getRange("A3:E3").format.font.bold = true;
 
     // Write map data at row 5
     if (mapData.length > 0 && mapData[0].length > 0) {
@@ -489,7 +504,7 @@ function createMapSheet(context, result, mapData, gridCols) {
             gridHdr.format.horizontalAlignment = "Center";
         }
 
-        // Data area formatting
+        // Data area base formatting
         if (mapData.length > 1 && gridCols > 0) {
             var gridData = ws.getRange("D6").getResizedRange(mapData.length - 2, gridCols - 1);
             gridData.format.horizontalAlignment = "Center";
@@ -510,6 +525,59 @@ function createMapSheet(context, result, mapData, gridCols) {
             var lblCol = ws.getRange("B6").getResizedRange(mapData.length - 2, 0);
             lblCol.format.font.size = 8;
         }
+
+        // Apply colors to individual cells
+        // H = Yellow
+        for (var i = 0; i < colorCells.H.length; i++) {
+            var pos = colorCells.H[i];
+            var cellAddr = colLetter(pos.c + 1) + (pos.r + 5); // +5 because data starts at row 6
+            ws.getRange(cellAddr).format.fill.color = "#FFFF00";
+            ws.getRange(cellAddr).format.font.color = "#000000";
+        }
+
+        // X = Red
+        for (var i = 0; i < colorCells.X.length; i++) {
+            var pos = colorCells.X[i];
+            var cellAddr = colLetter(pos.c + 1) + (pos.r + 5);
+            ws.getRange(cellAddr).format.fill.color = "#FF6B6B";
+            ws.getRange(cellAddr).format.font.color = "#FFFFFF";
+        }
+
+        // E = Orange
+        for (var i = 0; i < colorCells.E.length; i++) {
+            var pos = colorCells.E[i];
+            var cellAddr = colLetter(pos.c + 1) + (pos.r + 5);
+            ws.getRange(cellAddr).format.fill.color = "#FFA500";
+            ws.getRange(cellAddr).format.font.color = "#FFFFFF";
+        }
+
+        // S = Pale gold
+        for (var i = 0; i < colorCells.S.length; i++) {
+            var pos = colorCells.S[i];
+            var cellAddr = colLetter(pos.c + 1) + (pos.r + 5);
+            ws.getRange(cellAddr).format.fill.color = "#FFF2CC";
+            ws.getRange(cellAddr).format.font.color = "#8C8250";
+        }
+
+        // . = Green
+        for (var i = 0; i < colorCells.ok.length; i++) {
+            var pos = colorCells.ok[i];
+            var cellAddr = colLetter(pos.c + 1) + (pos.r + 5);
+            ws.getRange(cellAddr).format.fill.color = "#DAF2DA";
+            ws.getRange(cellAddr).format.font.color = "#228B22";
+        }
+
+        // Color check marks
+        for (var row = 0; row < mapData.length - 1; row++) {
+            var checkAddr = "C" + (row + 6);
+            var checkVal = mapData[row + 1][2];
+            if (checkVal === "✓") {
+                ws.getRange(checkAddr).format.font.color = "#008000";
+            } else {
+                ws.getRange(checkAddr).format.font.color = "#CC0000";
+                ws.getRange(checkAddr).format.font.bold = true;
+            }
+        }
     }
 
     // Column widths
@@ -521,13 +589,14 @@ function createMapSheet(context, result, mapData, gridCols) {
 }
 
 // ============================================
-// CREATE DASHBOARD
+// CREATE DASHBOARD WITH COUNTIF FORMULAS AND TABLE
 // ============================================
 function makeDashboard(context) {
     var ws = context.workbook.worksheets.add(auditConfig.dashboardName);
     ws.position = 0;
 
     var totalIssues = auditState.totalH + auditState.totalX + auditState.totalE;
+    var issueCount = auditState.issues.length;
 
     // Title
     ws.getRange("A1").values = [["MODEL AUDIT DASHBOARD"]];
@@ -538,30 +607,64 @@ function makeDashboard(context) {
     ws.getRange("A2").values = [[new Date().toLocaleString()]];
     ws.getRange("A2").format.font.color = "#888888";
 
-    // Scoreboard
+    // Calculate where issue table starts
+    var sheetTableEndRow = 5 + auditState.results.length;
+    var issueHeaderRow = sheetTableEndRow + 3;
+    var issueDataStartRow = issueHeaderRow + 1;
+    var issueDataEndRow = issueDataStartRow + issueCount - 1;
+    var issueTypeColAddr = "$A$" + issueDataStartRow + ":$A$" + (issueDataStartRow + Math.max(issueCount - 1, 0));
+
+    // Scoreboard with COUNTIF formulas (will auto-update when you delete rows)
     ws.getRange("H1").values = [["Total"]];
-    ws.getRange("H2").values = [[totalIssues]];
+    ws.getRange("H1").format.font.bold = true;
+    ws.getRange("H1").format.font.size = 9;
+    // Total formula = count of H + X + E in issue table
+    if (issueCount > 0) {
+        ws.getRange("H2").formulas = [["=COUNTA(" + issueTypeColAddr + ")"]];
+    } else {
+        ws.getRange("H2").values = [[0]];
+    }
     ws.getRange("H2").format.font.size = 20;
     ws.getRange("H2").format.font.bold = true;
     ws.getRange("H2").format.fill.color = totalIssues === 0 ? "#DAF2DA" : "#FFC7CE";
 
-    ws.getRange("J1").values = [["H"]];
-    ws.getRange("J2").values = [[auditState.totalH]];
+    ws.getRange("J1").values = [["H (Hardcode)"]];
+    ws.getRange("J1").format.font.bold = true;
+    ws.getRange("J1").format.font.size = 9;
+    if (issueCount > 0) {
+        ws.getRange("J2").formulas = [['=COUNTIF(' + issueTypeColAddr + ',"H")']];
+    } else {
+        ws.getRange("J2").values = [[0]];
+    }
     ws.getRange("J2").format.font.size = 20;
     ws.getRange("J2").format.font.bold = true;
-    ws.getRange("J2").format.fill.color = "#FFE6B4";
+    ws.getRange("J2").format.fill.color = "#FFFF00";
 
-    ws.getRange("L1").values = [["X"]];
-    ws.getRange("L2").values = [[auditState.totalX]];
+    ws.getRange("L1").values = [["X (Break)"]];
+    ws.getRange("L1").format.font.bold = true;
+    ws.getRange("L1").format.font.size = 9;
+    if (issueCount > 0) {
+        ws.getRange("L2").formulas = [['=COUNTIF(' + issueTypeColAddr + ',"X")']];
+    } else {
+        ws.getRange("L2").values = [[0]];
+    }
     ws.getRange("L2").format.font.size = 20;
     ws.getRange("L2").format.font.bold = true;
-    ws.getRange("L2").format.fill.color = "#FFC7CE";
+    ws.getRange("L2").format.fill.color = "#FF6B6B";
+    ws.getRange("L2").format.font.color = "#FFFFFF";
 
-    ws.getRange("N1").values = [["E"]];
-    ws.getRange("N2").values = [[auditState.totalE]];
+    ws.getRange("N1").values = [["E (Error)"]];
+    ws.getRange("N1").format.font.bold = true;
+    ws.getRange("N1").format.font.size = 9;
+    if (issueCount > 0) {
+        ws.getRange("N2").formulas = [['=COUNTIF(' + issueTypeColAddr + ',"E")']];
+    } else {
+        ws.getRange("N2").values = [[0]];
+    }
     ws.getRange("N2").format.font.size = 20;
     ws.getRange("N2").format.font.bold = true;
-    ws.getRange("N2").format.fill.color = auditState.totalE === 0 ? "#DAF2DA" : "#FF5050";
+    ws.getRange("N2").format.fill.color = "#FFA500";
+    ws.getRange("N2").format.font.color = "#FFFFFF";
 
     // Sheet summary table
     ws.getRange("A4:G4").values = [["Sheet", "Period", "H", "X", "E", "Total", "Map"]];
@@ -569,7 +672,7 @@ function makeDashboard(context) {
     ws.getRange("A4:G4").format.fill.color = "#44546A";
     ws.getRange("A4:G4").format.font.color = "#FFFFFF";
 
-    // Write results
+    // Write sheet results
     if (auditState.results.length > 0) {
         var data = [];
         for (var i = 0; i < auditState.results.length; i++) {
@@ -581,31 +684,57 @@ function makeDashboard(context) {
         ws.getRange("A5").getResizedRange(data.length - 1, 6).values = data;
     }
 
-    // Totals row
+    // Totals row for sheets
     var totRow = 5 + auditState.results.length;
     ws.getRange("A" + totRow + ":G" + totRow).values = [["TOTAL", "", auditState.totalH, auditState.totalX, auditState.totalE, totalIssues, ""]];
     ws.getRange("A" + totRow + ":G" + totRow).format.font.bold = true;
 
-    // Issue detail
-    var issRow = totRow + 2;
-    ws.getRange("A" + issRow).values = [["ISSUE DETAIL (" + auditState.issues.length + ")"]];
-    ws.getRange("A" + issRow).format.font.bold = true;
-    ws.getRange("A" + issRow).format.font.size = 13;
+    // Issue detail section
+    ws.getRange("A" + issueHeaderRow).values = [["ISSUE DETAIL"]];
+    ws.getRange("A" + issueHeaderRow).format.font.bold = true;
+    ws.getRange("A" + issueHeaderRow).format.font.size = 13;
 
-    var hdrRow = issRow + 1;
-    ws.getRange("A" + hdrRow + ":F" + hdrRow).values = [["Type", "Sheet", "Cell", "Actual", "Expected", "Go"]];
-    ws.getRange("A" + hdrRow + ":F" + hdrRow).format.font.bold = true;
-    ws.getRange("A" + hdrRow + ":F" + hdrRow).format.fill.color = "#44546A";
-    ws.getRange("A" + hdrRow + ":F" + hdrRow).format.font.color = "#FFFFFF";
+    // Issue table header
+    var tblHdrRow = issueHeaderRow + 1;
+    ws.getRange("A" + tblHdrRow + ":F" + tblHdrRow).values = [["Type", "Sheet", "Cell", "Actual", "Expected", "Go"]];
+    ws.getRange("A" + tblHdrRow + ":F" + tblHdrRow).format.font.bold = true;
+    ws.getRange("A" + tblHdrRow + ":F" + tblHdrRow).format.fill.color = "#44546A";
+    ws.getRange("A" + tblHdrRow + ":F" + tblHdrRow).format.font.color = "#FFFFFF";
 
     // Write issues
-    if (auditState.issues.length > 0) {
+    if (issueCount > 0) {
         var issData = [];
-        for (var j = 0; j < auditState.issues.length; j++) {
+        for (var j = 0; j < issueCount; j++) {
             var iss = auditState.issues[j];
             issData.push([iss.type, iss.sheet, iss.cell, iss.actual || "", iss.expected || "", "Go"]);
         }
-        ws.getRange("A" + (hdrRow + 1)).getResizedRange(issData.length - 1, 5).values = issData;
+        var issDataRange = ws.getRange("A" + (tblHdrRow + 1)).getResizedRange(issData.length - 1, 5);
+        issDataRange.values = issData;
+
+        // Color the Type column
+        for (var k = 0; k < issData.length; k++) {
+            var typeCell = ws.getRange("A" + (tblHdrRow + 1 + k));
+            var t = issData[k][0];
+            if (t === "H") {
+                typeCell.format.fill.color = "#FFFF00";
+            } else if (t === "X") {
+                typeCell.format.fill.color = "#FF6B6B";
+                typeCell.format.font.color = "#FFFFFF";
+            } else if (t === "E") {
+                typeCell.format.fill.color = "#FFA500";
+                typeCell.format.font.color = "#FFFFFF";
+            }
+        }
+
+        // Style Go column
+        var goCol = ws.getRange("F" + (tblHdrRow + 1)).getResizedRange(issData.length - 1, 0);
+        goCol.format.font.color = "#0563C1";
+
+        // Create Table with AutoFilter
+        var tableRange = ws.getRange("A" + tblHdrRow + ":F" + (tblHdrRow + issData.length));
+        var issueTable = ws.tables.add(tableRange, true);
+        issueTable.name = "IssueTable";
+        issueTable.style = "TableStyleMedium2";
     }
 
     // Column widths
@@ -787,9 +916,9 @@ function showSummaryUI() {
     var total = auditState.totalH + auditState.totalX + auditState.totalE;
 
     var html = '<div class="audit-summary-cards">';
-    html += '<div class="audit-card critical"><span class="count">' + auditState.totalE + '</span><span class="label">Errors</span></div>';
-    html += '<div class="audit-card warning"><span class="count">' + auditState.totalH + '</span><span class="label">Hardcodes</span></div>';
-    html += '<div class="audit-card warning"><span class="count">' + auditState.totalX + '</span><span class="label">Breaks</span></div>';
+    html += '<div class="audit-card" style="background:#FFA500;color:#fff;"><span class="count">' + auditState.totalE + '</span><span class="label">Errors (E)</span></div>';
+    html += '<div class="audit-card" style="background:#FFFF00;color:#000;"><span class="count">' + auditState.totalH + '</span><span class="label">Hardcodes (H)</span></div>';
+    html += '<div class="audit-card" style="background:#FF6B6B;color:#fff;"><span class="count">' + auditState.totalX + '</span><span class="label">Breaks (X)</span></div>';
     html += '</div>';
 
     if (auditState.results.length > 0) {
@@ -806,23 +935,6 @@ function showSummaryUI() {
         }
         if (auditState.results.length > 5) {
             html += '<p class="more-issues">+' + (auditState.results.length - 5) + ' more</p>';
-        }
-        html += '</div>';
-    }
-
-    if (auditState.issues.length > 0) {
-        html += '<div class="audit-issues-list" style="margin-top:10px;">';
-        html += '<p class="kicker">Top Issues</p>';
-        for (var j = 0; j < Math.min(5, auditState.issues.length); j++) {
-            var iss = auditState.issues[j];
-            var c = iss.type === "E" ? "critical" : "warning";
-            html += '<div class="audit-issue-item ' + c + '">';
-            html += '<span class="issue-type">' + iss.type + ': ' + iss.cell + '</span>';
-            html += '<span class="issue-location">' + escapeHtml(iss.sheet) + '</span>';
-            html += '</div>';
-        }
-        if (auditState.issues.length > 5) {
-            html += '<p class="more-issues">+' + (auditState.issues.length - 5) + ' more</p>';
         }
         html += '</div>';
     }
